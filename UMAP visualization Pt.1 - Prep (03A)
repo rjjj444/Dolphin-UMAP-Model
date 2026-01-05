@@ -1,0 +1,121 @@
+#UMAP visualization Part 1 (prep)
+
+#Import statements, constants and functions
+
+import pandas as pd
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+import soundfile as sf
+import io
+import librosa
+import librosa.display
+import umap
+
+import sys 
+sys.path.insert(0, '..')
+
+P_DIR = str(Path(os.getcwd()).parents[0])  
+DATA = os.path.join(os.path.sep, P_DIR, 'data') 
+DF_NAME = 'df_umap.pkl'
+
+SPEC_COL = 'spectrograms' # column name that contains the spectrograms
+ID_COL = 'callID' # column name that contains call identifier (must be unique)
+
+
+OVERWRITE = False  # If there already exists an image_data.pkl, should it be overwritten? Default no
+
+# Spectrogramming parameters (needed for generating the images)
+
+from parameters.spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+
+# Make sure the spectrogramming parameters are correct!
+# They are used to set the correct time and frequency axis labels for the spectrogram images. 
+
+# If you are using bandpass-filtered spectrograms...
+if 'filtered' in SPEC_COL:
+    # ...FMIN is set to LOWCUT, FMAX to HIGHCUT and N_MELS to N_MELS_FILTERED
+    from parameters.spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
+    
+    FMIN = LOWCUT
+    FMAX = HIGHCUT
+    N_MELS = N_MELS_FILTERED
+
+#######################################
+#1. Read in files
+
+df = pd.read_pickle(os.path.join(os.path.sep, DATA, DF_NAME))
+
+#1.1. Check if call identifier column is present
+
+# Default callID will be the name of the wav file
+
+if ID_COL not in df.columns:
+    print('No ID-Column found (', ID_COL, ')')
+    
+    if 'filename' in df.columns:
+        print("Default ID column ", ID_COL, "will be generated from filename.")
+        df[ID_COL] = [x.split(".")[0] for x in df['filename']]
+    else:
+        raise
+
+#Ex. output: No ID-Column found ( callID )
+#             Default ID column  callID will be generated from filename.
+
+###########################################
+#2. Generate spectrogram images
+
+#A spectrogram image is generated from each row in the dataframe. Images are saved in a dictionary (keys are the ID_COL of the dataframe).
+#The dictionary is pickled and saved as image_data.pkl. It will later be loaded in the interactive visualization script and these images will be displayed in the visualization.
+
+if OVERWRITE==False and os.path.isfile(os.path.join(os.path.sep,DATA,'image_data.pkl')):
+    print("File already exists. Overwrite is set to FALSE, so no new image_data will be generated.")
+    
+    # Double-ceck if image_data contains all the required calls
+    with open(os.path.join(os.path.sep, DATA, 'image_data.pkl'), 'rb') as handle:
+        image_data = pickle.load(handle)  
+    image_keys = list(image_data.keys())
+    expected_keys = list(df[ID_COL])
+    missing = list(set(expected_keys)-set(image_keys))
+    
+    if len(missing)>0:
+        print("BUT: The current image_data.pkl file doesn't seem to contain all calls that are in your dataframe!")
+        
+else:
+    image_data = {}
+    for i,dat in enumerate(df.spectrograms):
+        print('\rProcessing i:',i,'/',df.shape[0], end='')
+        dat = np.asarray(df.iloc[i][SPEC_COL]) 
+        sr = df.iloc[i]['samplerate_hz']
+        plt.figure()
+        librosa.display.specshow(dat,sr=sr, hop_length=int(FFT_HOP * sr) , fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s',cmap='inferno')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        byte_im = buf.getvalue()
+        image_data[df.iloc[i][ID_COL]] = byte_im
+        plt.close()
+
+    # Store data (serialize)
+    with open(os.path.join(os.path.sep,DATA,'image_data.pkl'), 'wb') as handle:
+        pickle.dump(image_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+#Ex. output: Processing i: 0 / 6428
+#            Processing i: 1 / 6428
+#            Processing i: 2 / 6428
+#            Processing i: 3 / 6428
+
+#Watch out for this warning: /home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'basey' parameter of __init__() has been renamed 'base' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+#/home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'linthreshy' parameter of __init__() has been renamed 'linthresh' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+
+#output goes to: Processing i: 6427 / 6428 / 6428
+
+######################################
+#3. Save dataframe
+
+#Save the dataframe to make sure it contains the correct ID column for access to the image_data.
+
+df.to_pickle(os.path.join(os.path.sep, DATA, DF_NAME))
