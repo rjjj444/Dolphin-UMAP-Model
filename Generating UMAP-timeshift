@@ -1,0 +1,171 @@
+#Generating UMAP timeshift #02B
+
+#Import statements, constants and functions
+import pandas as pd
+import numpy as np
+import pickle
+import os
+from pathlib import Path
+import umap
+import sys 
+sys.path.insert(0, '..')
+
+from functions.preprocessing_functions import calc_zscore, pad_spectro
+from functions.custom_dist_functions_umap import unpack_specs
+
+P_DIR = str(Path(os.getcwd()).parents[0])            # project directory
+DATA = os.path.join(os.path.sep, P_DIR, 'data') 
+
+#Specify UMAP parameters. If desired, other inputs can be used for UMAP, such as denoised spectrograms, bandpass filtered spectrograms or other (MFCC, specs on frequency scale...) by changining the INPUT_COL parameter.
+
+INPUT_COL = 'spectrograms'  # column that is used for UMAP
+                            #  could also choose 'denoised_spectrograms' or 'stretched_spectrograms' etc etc...
+
+MIN_OVERLAP = 0.9        # time shift constraint
+                         # MIN_OVERLAP*100 % of the shorter spectrogram must overlap with the longer spectrogram
+                         # when finding the position with the least error during the time-shifting
+
+METRIC_TYPE = 'euclidean'     # distance metric used in UMAP.
+                              # If performing time-shift, only 'euclidean', correlation', 'cosine' and 'manhattan' 
+                              # are available
+    
+N_COMP = 3                    # number of dimensions desired in latent space  
+
+#############################
+#1. Load data
+df = pd.read_pickle(os.path.join(os.path.sep, DATA, 'df.pkl'))
+
+#############################
+#2. UMAP
+
+#In this step, the spectrograms are z-transformed, zero-padded and concatenated to obtain numeric vectors.
+
+#2.1. Load custom distance function with time-shift
+
+# Pipeline with allowing for time-shift of spectrograms. When assessing distance between spectrograms,
+# the shorter spectrogram is shifted along the longer one to find the position of minimum-error overlap.
+# The shorter is then zero-padded to the length of the longer one and distance is calculated using the 
+# chosen METRIC_TYPE distance (euclidean, manhatten, cosine, correlation)
+# This also means that the dimensionality of the spectrogram vectors can be different for each pairwise 
+# comparison. Hence, we need some sort of normalization to the dimensionality, otherwise metrics like 
+# euclidean or manhattan will automatically be larger for high-dimensional spectrogram vectors (i.e. calls
+# with long duration). Therefore, euclidean and manhattan are normalized to the size of the spectrogram.
+    
+from preprocessing_functions import pad_transform_spectro
+import numba
+
+if METRIC_TYPE=='euclidean':
+    @numba.njit()
+    def spec_dist(a,b,size):
+        dist = np.sqrt((np.sum(np.subtract(a,b)*np.subtract(a,b)))) / np.sqrt(size)
+        return dist
+elif METRIC_TYPE=='manhattan':
+    @numba.njit()
+    def spec_dist(a,b,size):
+        dist = (np.sum(np.abs(np.subtract(a,b)))) / size
+        return dist
+elif METRIC_TYPE=='cosine':
+    @numba.njit()
+    def spec_dist(a,b,size):
+        # turn into unit vectors by dividing each vector field by magnitude of vector
+        dot_product = np.sum(a*b)
+        a_magnitude = np.sqrt(np.sum(a*a))
+        b_magnitude = np.sqrt(np.sum(b*b))
+        dist = 1 - dot_product/(a_magnitude*b_magnitude)
+        return dist
+
+elif METRIC_TYPE=='correlation':
+    @numba.njit()
+    def spec_dist(a,b,size):
+        a_meandiff = a - np.mean(a)
+        b_meandiff = b - np.mean(b)
+        dot_product =  np.sum(a_meandiff*b_meandiff)
+        a_meandiff_magnitude = np.sqrt(np.sum(a_meandiff*a_meandiff))
+        b_meandiff_magnitude = np.sqrt(np.sum(b_meandiff*b_meandiff))
+        dist = 1 - dot_product/(a_meandiff_magnitude * b_meandiff_magnitude)
+        return dist
+else:
+    print('Metric type ', METRIC_TYPE, ' not compatible with option TIME_SHIFT = True')
+    raise
+        
+@numba.njit()
+def calc_timeshift_pad(a,b):
+    spec_s, spec_l = unpack_specs(a,b)
+
+    len_s = spec_s.shape[1]
+    len_l = spec_l.shape[1]
+
+    nfreq = spec_s.shape[0] 
+
+    # define start position
+    min_overlap_frames = int(MIN_OVERLAP * len_s)
+    start_timeline = min_overlap_frames-len_s
+    max_timeline = len_l - min_overlap_frames
+    n_of_calculations = int((((max_timeline+1-start_timeline)+(max_timeline+1-start_timeline))/2) +1)
+    distances = np.full((n_of_calculations),999.)
+    count=0
+        
+    for timeline_p in range(start_timeline, max_timeline+1,2):
+        # mismatch on left side
+        if timeline_p < 0:
+            len_overlap = len_s - abs(timeline_p)
+            pad_s = np.full((nfreq, (len_l-len_overlap)),0.)
+            pad_l = np.full((nfreq, (len_s-len_overlap)),0.)
+            s_config = np.append(spec_s, pad_s, axis=1).astype(np.float64)
+            l_config = np.append(pad_l, spec_l, axis=1).astype(np.float64)
+            
+        # mismatch on right side
+        elif timeline_p > (len_l-len_s):
+            len_overlap = len_l - timeline_p
+            pad_s = np.full((nfreq, (len_l-len_overlap)),0.)
+            pad_l = np.full((nfreq, (len_s-len_overlap)),0.)
+            s_config = np.append(pad_s, spec_s, axis=1).astype(np.float64)
+            l_config = np.append(spec_l, pad_l, axis=1).astype(np.float64)
+                
+        else:
+            len_overlap = len_s
+            start_col_l = timeline_p
+            end_col_l = start_col_l + len_overlap
+            pad_s_left = np.full((nfreq, start_col_l),0.)
+            pad_s_right = np.full((nfreq, (len_l - end_col_l)),0.)
+            l_config = spec_l.astype(np.float64)
+            s_config = np.append(pad_s_left, spec_s, axis=1).astype(np.float64)
+            s_config = np.append(s_config, pad_s_right, axis=1).astype(np.float64)
+                
+        size = s_config.shape[0]*s_config.shape[1]
+        distances[count] = spec_dist(s_config, l_config, size)
+        count = count + 1
+        
+    min_dist = np.min(distances)
+    return min_dist
+
+#2.1. Prepare UMAP input
+
+specs = df[INPUT_COL]
+specs = [calc_zscore(s) for s in specs] # z-transform
+    
+n_bins = specs[0].shape[0]
+maxlen = np.max([spec.shape[1] for spec in specs]) * n_bins + 2
+trans_specs = [pad_transform_spectro(spec, maxlen) for spec in specs]
+data = np.asarray(trans_specs)
+
+#2.2. Specify UMAP parameters
+
+reducer = umap.UMAP(n_components=N_COMP, metric = calc_timeshift_pad, min_dist = 0, random_state=2204) 
+
+#2.3. Fit UMAP
+
+embedding = reducer.fit_transform(data)  # embedding contains the new coordinates of datapoints in 3D space
+
+#Watch for the following warning: /home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/umap/umap_.py:1728: UserWarning: custom distance metric does not return gradient; inverse_transform will be unavailable. To enable using inverse_transform method method, define a distance function that returns a tuple of (distance [float], gradient [np.array])
+#  "custom distance metric does not return gradient; inverse_transform will be unavailable. "
+
+#############################
+#3. Save dataframe
+
+# Add UMAP coordinates to dataframe
+for i in range(N_COMP):
+    df['UMAP'+str(i+1)] = embedding[:,i]
+
+# Save dataframe
+df.to_pickle(os.path.join(os.path.sep, DATA, 'df_umap.pkl'))
