@@ -165,3 +165,154 @@ FMAX = int(np.min(df['samplerate_hz'])/2) #--> upper bound for frequency (in Hz)
                                                      # If input files have different samplerates, the lowest samplerate is used
                                                      # to ensure all spectrograms have the same frequency resolution.
 
+#4.2. Save spectrogramming parameters
+#Save the parameters that were used, as they will be accessed later to label the frequeny and time axes of spectrogram images correctly
+if not os.path.isdir(os.path.join(os.path.sep, P_DIR, 'parameters')):
+    os.mkdir(os.path.join(os.path.sep, P_DIR, 'parameters'))
+
+spec_params_file = os.path.join(os.path.sep, P_DIR, 'parameters','spec_params.py')
+
+lines = ['N_MELS = '+str(N_MELS),
+         'FFT_WIN = '+str(FFT_WIN),
+         'FFT_HOP = '+str(FFT_HOP),
+         'WINDOW = "'+str(WINDOW)+'"',
+         'FMIN = '+str(FMIN),'FMAX = '+str(FMAX)]
+    
+with open(spec_params_file, 'w') as f:
+    for line in lines:
+        f.write(line)
+        f.write('\n')
+
+#4.3. Generate spectrograms
+#This code produces mel-transformed spectrograms on Decibel scale.
+spectrograms = df.apply(lambda row: generate_mel_spectrogram(data = row['raw_audio'],
+                                                             rate = row['samplerate_hz'],
+                                                             n_
+mels = N_MELS,
+                                                             window
+= WINDOW,
+                                                             fft_win = FFT_WIN,
+                                                             fft_hop = FFT_HOP,
+                                                             fmax = FMAX), 
+                               axis=1)
+
+
+df['spectrograms'] = spectrograms
+
+# Removing NA rows
+
+nrows = df.shape[0]
+df.dropna(subset=['spectrograms'], inplace=True)
+print("Dropped ", nrows-df.shape[0], " rows due to failed spectrogram generation")
+
+#!!!Dropped  0  rows due to failed spectrogram generation?
+
+#Show example spectrograms (Plot some example spectrograms as a sanity-check, to see if they are reasonable)
+# Randomly choose some example vocalizations
+
+n_examples = 3
+random_indices = [random.randint(0,df.shape[0]) for x in [0]*n_examples]
+
+if PLOT_EXAMPLES: plot_examples(df, random_indices, 'spectrograms')
+
+#[Optional: Generate denoised spectrograms (median subtraction):]
+#!!!Generate denoised spectrograms (denoised by median subtraction to reduce impulse noise) to have them available as an alternative input to UMAP:
+if MEDIAN_SUB:
+    df['denoised_spectrograms'] = [(spectrogram - np.median(spectrogram, axis=0)) for spectrogram in df['spectrograms']]
+
+
+if MEDIAN_SUB and PLOT_EXAMPLES: plot_examples(df, random_indices, 'denoised_spectrograms')
+
+LOWCUT = 300.0              # lower bound in Hz (all signals below this bound will be removed)  
+HIGHCUT = 3000.0            # upper bound in Hz (all signals above this bound will be removed)
+N_MELS_FILTERED = N_MELS    # N_Mels. Depending on your cutoffs, it may make sense to adapt these, too! 
+
+if BANDPASS_FILTER:   
+    
+    # update spec_params
+    lines = ['N_MELS = '+str(N_MELS),
+             'FFT_WIN = '+str(FFT_WIN),
+             'FFT_HOP = '+str(FFT_HOP),
+             'WINDOW = "'+str(WINDOW)+'"',
+             'FMIN = '+str(FMIN),
+             'FMAX = '+str(FMAX),
+             'LOWCUT = '+str(LOWCUT),
+             'HIGHCUT = '+str(HIGHCUT),
+             'N_MELS_FILTERED = '+str(N_MELS_FILTERED)]
+
+    with open(os.path.join(os.path.sep, P_DIR, 'parameters','spec_params.py'), 'w') as f:
+        for line in lines:
+            f.write(line)
+            f.write('\n')
+
+if BANDPASS_FILTER:
+    from functions.audio_functions import butter_bandpass_filter
+    
+    
+    # create filtered audio
+    df['filtered_audio'] = df.apply(lambda row: butter_bandpass_filter(data = row['raw_audio'],
+                                                                       lowcut = LOWCUT,
+                                                                       
+hi
+ghcut = HIGHCUT,
+                                                                       sr = row['samplerate_hz'],
+                                                                       order = 6),
+                               axis=1)
+
+    # create spectrograms from filtered audio      
+    df['filtered_spectrograms'] = df.apply(lambda row: generate_mel_spectrogram(data = row['filtered_audio'],
+                                                                                rate = row['samplerate_hz'],
+                                                                                n_mels = N_MELS_FILTERED,
+                                                                                window = WINDOW,
+                                                                                fft_win = FFT_WIN,
+                                                                                fft_hop = FFT_HOP,
+                                                                                fmax = HIGHCUT,
+                                                                                fmin = LOWCUT
+                                                                               ), 
+                                           axis=1)
+
+if BANDPASS_FILTER and PLOT_EXAMPLES: plot_examples(df, random_indices, 'filtered_spectrograms')
+
+#########################################
+#!!![Optional: Generate stretched spectrograms (all stretched to equal length)]
+#Stretch all calls to equal length, e.g. maximum length in the dataset (using phase vocoder algorithm) and generate spectrograms from these stretched calls.
+
+if STRETCH:
+    from functions.audio_functions import generate_stretched_mel_spectrogram
+    
+    MAX_DURATION = np.max(df['duration_s'])
+
+    df['stretched_spectrograms'] = df.apply(lambda row: generate_stretched_mel_spectrogram(r
+ow['raw_audio'],
+                                                                                           row['samplerate_hz'],
+                                                                                           row['duration_s'],
+                                                                                           N_MELS,
+                                                                                           WINDOW,
+                                                                                           FFT_WIN,
+                                                                                           FFT_HOP,
+                                                                                           MAX_DURATION),
+                                            axis=1)
+
+if STRETCH and PLOT_EXAMPLES: plot_examples(df, random_indices, 'stretched_spectrograms')
+
+########################################
+#!!![Optional: Create any combination of preprocessing steps]
+#It is also possible to combine different preprocessing steps. For example, I could apply median subtraction to the bandpass-filtered spectrograms:
+if 'filtered_spectrograms' in df.columns:
+    df['denoised_filtered_spectrograms'] = [(spectrogram - np.median(spectrogram, axis=0)) for spectrogram in df['filtered_spectrograms']]
+
+if PLOT_EXAMPLES: plot_examples(df, random_indices, 'denoised_filtered_spectrograms')
+
+#########################################
+#5. Clean labels
+#Make sure that all labels are strings and vocalizations with missing labels are labelled as "unknown"
+
+df['original_label'] = df[LABEL_COL] #  original labels are saved in "original_label" column
+
+df['label'] = ["unknown" if x in NA_DESCRIPTORS else x for x in df[LABEL_COL]]  # "unknown" for all NA labels
+labels = df['label'].fillna(NEW_NA_INDICATOR) # double-check
+df['label'] = labels.astype(str) # transform to strings and save in df as "label" column
+
+#########################################
+#6. Save dataframe
+df.to_pickle(os.path.join(os.path.sep, DATA, 'df.pkl'))
