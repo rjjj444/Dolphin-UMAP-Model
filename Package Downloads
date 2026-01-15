@@ -1,0 +1,26 @@
+#Conda installs
+#Anaconda software must be downloaded in order to run these packages
+
+#Creating environment with Conda
+!conda create --name my_env
+!conda activate my_env
+
+#Required Conda plugins and packages
+!conda install -c conda-forge umap-learn
+!conda install -c conda-forge librosa
+!conda install ipywidgets
+!conda install pandas=1.2.4
+!conda install seaborn
+!conda install -c conda-forge pysoundfile=0.10.3
+!conda install -c conda-forge voila
+!conda install -c anaconda graphviz
+!conda install -c conda-forge hdbscan
+!conda install -c plotly plotly
+!conda install networkx
+!conda install -c conda-forge pygraphviz
+
+#Enabling ipywidgets and jupyter notebook
+!jupyter nbextension enable --py widgetsnbextension
+
+#Start Jupyer notebook
+!jupyter notebook
