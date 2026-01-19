@@ -1,0 +1,21 @@
+# Load the metadata file
+import pandas as pd
+import os
+
+DATA = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder\data"
+info_file = os.path.join(DATA, 'info_file.csv')
+
+# Try to read the CSV
+try:
+    df = pd.read_csv(info_file, sep=";")
+    print(f"✓ Successfully loaded info_file.csv")
+    print(f"   Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+    print(f"\n   Columns: {list(df.columns)}")
+    print(f"\n   First few rows:")
+    print(df.head())
+except Exception as e:
+    print(f"Error loading CSV: {e}")
+    # Try with comma separator instead
+    df = pd.read_csv(info_file, sep=",")
+    print(f"✓ Loaded with comma separator instead")
+    print(df.head())
