@@ -1,3 +1,5 @@
+# Generating Spectrogram #01
+
 import pandas as pd
 import numpy as np
 import pickle
@@ -37,12 +39,9 @@ def plot_examples(df, random_indices, spec_type):
     
 ######################################
 # Set important paths
-P_DIR = str(Path(os.getcwd()).parents[0])            # project directory, by default set to parent directory
-                                                     # of your current working directory
-    
-AUDIO_IN = os.path.join(os.path.sep, P_DIR, 'audio') # --> audio directory, contains audio (.wav) files
-DATA = os.path.join(os.path.sep, P_DIR, 'data')      # --> empty data directory, output files will be put here
-
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder" # project directory, by default set to parent directory of your current working directory
+AUDIO_IN = os.path.join(P_DIR, 'audio')                                    # --> audio directory, contains audio (.wav) files
+DATA = os.path.join(P_DIR, 'data')                                         # --> empty data directory, output files will be put here
 
 # Information about the info_file.csv
 LABEL_COL = "label"                                 # -->name of column that contains labels
@@ -65,6 +64,7 @@ if not os.path.isdir(AUDIO_IN):
 
 if not os.path.isdir(DATA):
     os.mkdir(DATA)
+
 
 #By default, only mel-transformed, Decibel-transformed spectrograms are generated.
 #If desired, you can also create denoised spectrograms (bandpass-filtered to remove frequencies that likely only contain noise, or median subtracted to remove the effect of broadband impulse noise) and time-stretched spectrograms, e.g. stretch all spectrograms to the same duration. This may be helpful, if you do not wish to differentiate calls with the same shape, but different duration.
@@ -181,16 +181,15 @@ lines = ['N_MELS = '+str(N_MELS),
 with open(spec_params_file, 'w') as f:
     for line in lines:
         f.write(line)
+
         f.write('\n')
 
 #4.3. Generate spectrograms
 #This code produces mel-transformed spectrograms on Decibel scale.
 spectrograms = df.apply(lambda row: generate_mel_spectrogram(data = row['raw_audio'],
                                                              rate = row['samplerate_hz'],
-                                                             n_
-mels = N_MELS,
-                                                             window
-= WINDOW,
+                                                             n_mels = N_MELS,
+                                                             window = WINDOW,
                                                              fft_win = FFT_WIN,
                                                              fft_hop = FFT_HOP,
                                                              fmax = FMAX), 
@@ -219,7 +218,6 @@ if PLOT_EXAMPLES: plot_examples(df, random_indices, 'spectrograms')
 #!!!Generate denoised spectrograms (denoised by median subtraction to reduce impulse noise) to have them available as an alternative input to UMAP:
 if MEDIAN_SUB:
     df['denoised_spectrograms'] = [(spectrogram - np.median(spectrogram, axis=0)) for spectrogram in df['spectrograms']]
-
 
 if MEDIAN_SUB and PLOT_EXAMPLES: plot_examples(df, random_indices, 'denoised_spectrograms')
 
@@ -252,9 +250,7 @@ if BANDPASS_FILTER:
     # create filtered audio
     df['filtered_audio'] = df.apply(lambda row: butter_bandpass_filter(data = row['raw_audio'],
                                                                        lowcut = LOWCUT,
-                                                                       
-hi
-ghcut = HIGHCUT,
+                                                                       highcut = HIGHCUT,
                                                                        sr = row['samplerate_hz'],
                                                                        order = 6),
                                axis=1)
@@ -262,7 +258,7 @@ ghcut = HIGHCUT,
     # create spectrograms from filtered audio      
     df['filtered_spectrograms'] = df.apply(lambda row: generate_mel_spectrogram(data = row['filtered_audio'],
                                                                                 rate = row['samplerate_hz'],
-                                                                                n_mels = N_MELS_FILTERED,
+                                                                            n_mels = N_MELS_FILTERED,
                                                                                 window = WINDOW,
                                                                                 fft_win = FFT_WIN,
                                                                                 fft_hop = FFT_HOP,
@@ -282,11 +278,10 @@ if STRETCH:
     
     MAX_DURATION = np.max(df['duration_s'])
 
-    df['stretched_spectrograms'] = df.apply(lambda row: generate_stretched_mel_spectrogram(r
-ow['raw_audio'],
+    df['stretched_spectrograms'] = df.apply(lambda row: generate_stretched_mel_spectrogram(row['raw_audio'],
                                                                                            row['samplerate_hz'],
                                                                                            row['duration_s'],
-                                                                                           N_MELS,
+                                                                            N_MELS,
                                                                                            WINDOW,
                                                                                            FFT_WIN,
                                                                                            FFT_HOP,
