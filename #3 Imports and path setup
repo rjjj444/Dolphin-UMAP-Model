@@ -33,3 +33,6 @@ print(f"\n✓ Paths configured:")
 print(f"  Project: {P_DIR}")
 print(f"  Audio: {AUDIO_IN}")
 print(f"  Data: {DATA}")
+
+#python diagnose_paths.py
+#A powershell command, you don't need to run this if you're already in jupyter notebook and have your code environment set up (which we did in previous steps)
