@@ -1,6 +1,13 @@
 #UMAP Clustering #03
 
 #Imports, functions and constants
+
+# Install hdbscan if needed (run once, then comment out)
+#!conda install -c conda-forge hdbscan -y
+
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+
 import os
 import pandas as pd
 import numpy as np
@@ -23,6 +30,10 @@ from functions.plot_functions import umap_3Dplot, plotly_viz
 
 %matplotlib inline
 
+print("="*70)
+print("UMAP CLUSTERING AND EVALUATION")
+print("="*70)
+
 # Import functions for calculating unadjusted Rand score
 # Resource: https://stackoverflow.com/questions/49586742/rand-index-function-clustering-performance-evaluation
 
@@ -41,6 +52,8 @@ def calc_rand(pred, true):
     classnames, true = np.unique(true, return_inverse=True)
     return rand_index_score(pred, true)
 
+print("✓ Loaded helper functions")
+
 distinct_colors_22 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
                       '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', 
                       '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
@@ -48,11 +61,19 @@ distinct_colors_22 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
                       '#ffffff', '#000000']
 
 # Set project directory and column name of label variable
-P_DIR = str(Path(os.getcwd()).parents[0])            # project directory
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder" # project directory
+DATA = os.path.join(P_DIR, 'data')
 LABEL_COL = 'label'                                  # Column name of label variable
 
+print("\n" + "="*70)
+print("STEP 1: Loading Data")
+print("="*70)
+
 # Load dataframe with UMAP coordinates
-df = pd.read_pickle(os.path.join(os.path.sep, P_DIR, 'data', 'df_umap.pkl'))
+df_path = os.path.join(P_DIR, 'data', 'df_umap.pkl')
+print(f"Loading from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples")
 
 # Detect columns with UMAP coordinates
 UMAP_COLS = [x for x in df.columns if 'UMAP' in x]   
@@ -62,20 +83,34 @@ labels = df[LABEL_COL]                               # labels
 embedding = np.asarray(df[UMAP_COLS])                # UMAP coordinates
 
 print("Found ", len(UMAP_COLS), "UMAP columns. Label in column : ", LABEL_COL)
+print(f"Embedding shape: {embedding.shape}")
+print(f"Unique labels: {len(labels.unique())}")
 
 #Found  3 UMAP columns. Label in column :  label
 
 ###################################
 #Clustering
 
+print("\n" + "="*70)
+print("STEP 2: Running HDBSCAN Clustering")
+print("="*70)
+
 #The aim here is to cluster the vocalizations into distinct categories based on the UMAP coordinates. We use Hierarchical Density-Based Spatial Clustering of Applications with Noise (HDBSCAN) to obtain high-confidence clusters, at the expense of leaving some datapoints unassigned ("Noise").
 #https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html
 
 # clustering
-HDBSCAN = hdbscan.HDBSCAN(min_cluster_size=int(0.01*embedding.shape[0]),
+min_cluster_size = int(0.01*embedding.shape[0])
+print(f"Min cluster size: {min_cluster_size} (1% of {embedding.shape[0]} samples)")
+print("Running HDBSCAN... (this may take 1-3 minutes)")
+
+HDBSCAN = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size,
                           cluster_selection_method = 'leaf').fit(embedding)
 hdb_labels = HDBSCAN.labels_ # these are the predicted clusters labels
 df['HDBSCAN'] = hdb_labels   # add predicted cluster labels to dataframe
+
+print(f"✓ HDBSCAN complete!")
+print(f"  Found {len(set(hdb_labels))} clusters (including noise)")
+print(f"  Noise points: {sum(hdb_labels == -1)}")
 
 # For some evaluations, it makes sense to remove the datapoints labelled as noise
 # "Noise" datapoints are by default labelled as -1 by HDBSCAN
@@ -88,8 +123,14 @@ hdb_labels_no_noise = hdb_labels_no_noise[assigned] # the predicted cluster labe
 df_no_noise = df.loc[assigned]                           # the dataframe without noise datapoints
 embedding_no_noise = embedding[assigned,:]               # the UMAP coordinates without noise datapoints
 
+print(f"  After removing noise: {len(hdb_labels_no_noise)} samples in {len(set(hdb_labels_no_noise))} clusters")
+
 ###################################
 #Cluster evaluation
+
+print("\n" + "="*70)
+print("STEP 3: Evaluating Cluster Quality")
+print("="*70)
 
 #1. Agreement between automated clusters and manual labels: RI, ARI, SIL
 
@@ -104,13 +145,13 @@ embedding_no_noise = embedding[assigned,:]               # the UMAP coordinates 
 
 # evaluate clustering 
 
-print("************************")
+print("Calculating metrics...")
+print("\n************************")
 print("HDBSCAN:")
 print("************************")
 cluster_labels = hdb_labels
 true_labels = df[LABEL_COL]
 embedding_data = embedding
-
 
 print("RI: ", calc_rand(cluster_labels, true_labels))
 print("ARI: ", adjusted_rand_score(cluster_labels, true_labels))
@@ -125,7 +166,6 @@ print("************************")
 cluster_labels = hdb_labels_no_noise
 true_labels = df_no_noise[LABEL_COL]
 embedding_data = embedding_no_noise
-
 
 print("RI: ", calc_rand(cluster_labels, true_labels))
 print("ARI: ", adjusted_rand_score(cluster_labels, true_labels))
@@ -151,7 +191,13 @@ print("N_clust: ", len(list(set(cluster_labels))))
 
 ####################################
 #2. Visualization
+
+print("\n" + "="*70)
+print("STEP 4: Generating Visualizations")
+print("="*70)
+
 #HDBSCAN labels
+print("\nGenerating 3D plot with HDBSCAN cluster labels...")
 
 hdb_colors = ['#d9d9d9'] + distinct_colors_22
 
@@ -163,8 +209,12 @@ umap_3Dplot(x=df['UMAP1'],              # xaxis coordinates
             outname=None,               # filename (with path) where figure will be saved. Default: None -> figure not saved
             showlegend=True)            # show legend if True else no legend
 
+print("✓ HDBSCAN cluster plot displayed")
+
 #You should get 3d output
 #Original labels
+
+print("\nGenerating 3D plot with original manual labels...")
 
 umap_3Dplot(x=df['UMAP1'],              # xaxis coordinates
             y=df['UMAP2'],              # yaxis coordinates
@@ -174,11 +224,18 @@ umap_3Dplot(x=df['UMAP1'],              # xaxis coordinates
             outname=None,               # filename (with path) where figure will be saved. Default: None -> figure not saved
             showlegend=True)            # show legend if True else no legend
 
+print("✓ Original labels plot displayed")
+
 #Example spectrograms for each HDBSCAN cluster
+
+print("\nGenerating example spectrograms for each cluster...")
+
 DISPLAY_COL = 'spectrograms' # column name of spectrogram to display (denoised_spectrograms, spectrograms...)
 
 n_specs=5
 clusters = sorted(list(set(hdb_labels)))
+
+print(f"  Displaying {n_specs} examples from each of {len(clusters)} clusters...")
 
 plt.figure(figsize=(n_specs*2, len(clusters)*2))
 
@@ -188,7 +245,7 @@ specs = {}
 for cluster in clusters:
     example = df[df['HDBSCAN']==cluster].sample(n = n_specs, random_state=2204)
     specs = example[DISPLAY_COL].values
-    labels = example[LABEL_COL].values
+    labels_loop = example[LABEL_COL].values
     i=0 
     
     plt.subplot(len(clusters), n_specs+1, k)
@@ -196,9 +253,7 @@ for cluster in clusters:
     plt.axis('off')
     plt.text(0.5,0.4, 'Cl. '+str(cluster), fontsize=16)
     
-    
-    
-    for spec, label in zip(specs, labels):
+    for spec, label in zip(specs, labels_loop):
         plt.subplot(len(clusters), n_specs+1, k)
         plt.imshow(spec, interpolation='nearest', aspect='equal', origin='lower')
         plt.axis('off')
@@ -207,22 +262,30 @@ for cluster in clusters:
         k += 1
 
 plt.tight_layout()
+plt.show()
+
+print("✓ Spectrogram examples displayed")
 
 #You should get a layout of audio spectrogram sections
 
 ######################################
 #3. Cluster content analysis
 
+print("\n" + "="*70)
+print("STEP 5: Analyzing Cluster Composition")
+print("="*70)
+
 #We can also investigate the composition of clusters in more detail. In this example, we investigate what call types constitute the different clusters, but other variables, such as individual identity or species could also be used.
 
 #3.1. Cluster composition (in absolute numbers)
 #The following plot shows the absolute numbers of datapoints labelled j (columns), in cluster i (row)
 
+print("\nCalculating cluster composition by call type...")
+
 analyze_by = LABEL_COL       # Column name of variable by which to analyze cluster content. 
                              # Select any variable of interest in DF
 
 cluster_labels = hdb_labels  # Variable of cluster labels
-
 
 cluster_labeltypes = sorted(list(set(cluster_labels)))
 by_types = sorted(list(set(df[analyze_by])))
@@ -234,17 +297,25 @@ for i,clusterlabel in enumerate(cluster_labeltypes):
 
 stats_tab_df = pd.DataFrame(stats_tab, index=cluster_labeltypes, columns=by_types)
 
+print(f"  Analyzing {len(cluster_labeltypes)} clusters across {len(by_types)} call types")
+
 # absolute vals
+print("\nPlotting absolute cluster composition...")
 plt.figure(figsize=(int(len(cluster_labeltypes)/2), int(len(by_types))))
 ax = sns.heatmap(stats_tab_df, annot=True, cmap='viridis', fmt='.0f', cbar=False)
 ax.set_xlabel(analyze_by, fontsize=16)
 ax.set_ylabel("Cluster label", fontsize=16) 
 ax.tick_params(labelsize=16)
+plt.show()
+
+print("✓ Absolute composition heatmap displayed")
 
 #You should get a cluster label graph (check github for reference pic)
 
 #3.2. Cluster composition (in %)
 #The following plot shows the composition of clusters in percentage (each row sums up to 100 %).
+
+print("\nPlotting cluster composition (% by row)...")
 
 # rowsums
 stats_tab_norm = np.zeros((stats_tab.shape))
@@ -259,9 +330,14 @@ ax = sns.heatmap(stats_tab_norm_df, annot=True, cmap='viridis', fmt='.1f', cbar=
 ax.set_xlabel(analyze_by, fontsize=16)
 ax.set_ylabel("Cluster label", fontsize=16) 
 ax.tick_params(labelsize=16)
+plt.show()
+
+print("✓ Row-normalized composition heatmap displayed")
 
 #3.3 Distribution of variables into clusters
 #The following plot shows the distribution of the analysis variable into clusters in percentage (each column sums up to 100 %).
+
+print("\nPlotting distribution into clusters (% by column)...")
 
 # colsums
 stats_tab_norm = np.zeros((stats_tab.shape))
@@ -276,4 +352,15 @@ ax = sns.heatmap(stats_tab_norm_df, annot=True, cmap='viridis', fmt='.1f', cbar=
 ax.set_xlabel(analyze_by, fontsize=16)
 ax.set_ylabel("Cluster label", fontsize=16) 
 ax.tick_params(labelsize=16)
+plt.show()
 
+print("✓ Column-normalized distribution heatmap displayed")
+
+print("\n" + "="*70)
+print("✓✓✓ CLUSTERING ANALYSIS COMPLETE! ✓✓✓")
+print("="*70)
+print(f"\nSummary:")
+print(f"  Total samples: {len(df)}")
+print(f"  Clusters found: {len(set(hdb_labels)) - 1} (plus {sum(hdb_labels == -1)} noise points)")
+print(f"  UMAP dimensions: {len(UMAP_COLS)}")
+print(f"  Manual labels: {len(df[LABEL_COL].unique())}")
