@@ -1,26 +1,41 @@
-#Conda installs
-#Anaconda software must be downloaded in order to run these packages
+# Just test if packages are available
+import pandas as pd
+print("✓ Pandas works!")
 
-#Creating environment with Conda
-!conda create --name my_env
-!conda activate my_env
+# Section 1: Imports and Setup
+import pandas as pd
+import numpy as np
+import os
+from pathlib import Path
 
-#Required Conda plugins and packages
-!conda install -c conda-forge umap-learn
-!conda install -c conda-forge librosa
-!conda install ipywidgets
-!conda install pandas=1.2.4
-!conda install seaborn
-!conda install -c conda-forge pysoundfile=0.10.3
-!conda install -c conda-forge voila
-!conda install -c anaconda graphviz
-!conda install -c conda-forge hdbscan
-!conda install -c plotly plotly
-!conda install networkx
-!conda install -c conda-forge pygraphviz
+print("✓ Step 1: Imports successful")
 
-#Enabling ipywidgets and jupyter notebook
-!jupyter nbextension enable --py widgetsnbextension
+# Section 2: Set Paths (CHANGE THIS TO YOUR LOCATION)
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+AUDIO_IN = os.path.join(P_DIR, 'audio')
+DATA = os.path.join(P_DIR, 'data')
 
-#Start Jupyer notebook
-!jupyter notebook
+print(f"✓ Step 2: Paths set")
+print(f"   Project: {P_DIR}")
+print(f"   Audio: {AUDIO_IN}")
+print(f"   Data: {DATA}")
+
+# Section 3: Check if directories exist
+print(f"\n✓ Step 3: Checking directories...")
+print(f"   Audio exists: {os.path.isdir(AUDIO_IN)}")
+print(f"   Data exists: {os.path.isdir(DATA)}")
+
+# Section 4: Count audio files
+if os.path.isdir(AUDIO_IN):
+    wav_files = [f for f in os.listdir(AUDIO_IN) if f.endswith('.wav')]
+    print(f"\n✓ Step 4: Found {len(wav_files)} .wav files")
+    if len(wav_files) > 0:
+        print(f"   Examples: {wav_files[:3]}")
+else:
+    print(f"\n✗ Step 4: ERROR - Audio directory not found!")
+
+# Section 5: Check for info_file.csv
+info_file_path = os.path.join(DATA, 'info_file.csv')
+print(f"\n✓ Step 5: Checking for info_file.csv...")
+print(f"   Looking at: {info_file_path}")
+print(f"   Exists: {os.path.isfile(info_file_path)}")
