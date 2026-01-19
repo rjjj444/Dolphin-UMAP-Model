@@ -1,5 +1,9 @@
 #Generate UMAP basic #02A
 
+#This keeps the warning message from popping up - without this a warning will come up in the output saying that UMAP is using 1 CPU core because you set random_state=2204 for reproducibility. You can ignore it.
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+
 #Import statements, constants and functions
 import pandas as pd
 import numpy as np
@@ -11,55 +15,61 @@ import sys
 sys.path.insert(0, '..')
 
 from functions.preprocessing_functions import calc_zscore, pad_spectro
-from functions.custom_dist_functions_umap import unpack_specs
+# from functions.custom_dist_functions_umap import unpack_specs  # Not needed for basic UMAP
 
-P_DIR = str(Path(os.getcwd()).parents[0])       # project directory
-DATA = os.path.join(os.path.sep, P_DIR, 'data') # path to data subfolder in project directory
-DF_NAME = 'df.pkl'                              # name of pickled dataframe with metadata and spectrograms
+#Set paths (Make sure to use your correct paths based on how you have your folders organized!)
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+DF_NAME = 'df.pkl'
 
-#Specify UMAP parameters. If desired, other inputs can be used for UMAP, such as denoised spectrograms, bandpass filtered spectrograms or other (MFCC, specs on frequency scale...) by changining the INPUT_COL parameter.
+# Verify the file exists
+print(f"Looking for: {os.path.join(DATA, DF_NAME)}")
+print(f"File exists: {os.path.isfile(os.path.join(DATA, DF_NAME))}")
 
-INPUT_COL = 'spectrograms'  # column that is used for UMAP
-                            #  could also choose 'denoised_spectrograms' or 'stretched_spectrograms' etc etc...
-    
-METRIC_TYPE = 'euclidean'     # distance metric used in UMAP. Check UMAP documentation for other options
-                              # e.g. 'euclidean', correlation', 'cosine','manhattan' ...
-    
-N_COMP = 3                    # number of dimensions desired in latent space 
+# Rest of your code continues...
+INPUT_COL = 'spectrograms'
+METRIC_TYPE = 'euclidean'
+N_COMP = 3
+
+print(f"\nUMAP Parameters:")
+print(f"  Input: {INPUT_COL}")
+print(f"  Metric: {METRIC_TYPE}")
+print(f"  Components: {N_COMP}")
 
 ###############################
 #1. Load data
-df = pd.read_pickle(os.path.join(os.path.sep, DATA, DF_NAME))
+
+print("\nLoading data...")
+df = pd.read_pickle(os.path.join(DATA, DF_NAME))
+print(f"✓ Loaded {len(df)} samples")
 
 ###############################
 #2. UMAP
-
 #2.1. Prepare UMAP input
-#In this step, the spectrograms are z-transformed, zero-padded and concatenated to obtain numeric vectors.
-
-# Basic pipeline
-# No time-shift allowed, spectrograms should be aligned at the start. All spectrograms are zero-padded 
-# to equal length
-    
-
-specs = df[INPUT_COL] # choose spectrogram column
-specs = [calc_zscore(s) for s in specs] # z-transform each spectrogram
-
-maxlen= np.max([spec.shape[1] for spec in specs]) # find maximal length in dataset
-flattened_specs = [pad_spectro(spec, maxlen).flatten() for spec in specs] # pad all specs to maxlen, then row-wise concatenate (flatten)
-data = np.asarray(flattened_specs) # data is the final input data for UMAP
+print("\nPreparing spectrograms for UMAP...")
+specs = df[INPUT_COL]
+specs = [calc_zscore(s) for s in specs]
+maxlen= np.max([spec.shape[1] for spec in specs])
+flattened_specs = [pad_spectro(spec, maxlen).flatten() for spec in specs]
+data = np.asarray(flattened_specs)
+print(f"✓ Data prepared: shape {data.shape}")
 
 #2.2. Specify UMAP parameters
-reducer = umap.UMAP(n_components=N_COMP, metric = METRIC_TYPE,  # specify parameters of UMAP reducer
-                    min_dist = 0, random_state=2204) 
+print("\nConfiguring UMAP...")
+reducer = umap.UMAP(n_components=N_COMP, metric=METRIC_TYPE, 
+                    min_dist=0, random_state=2204)
 
-#2.2. Fit UMAP
-embedding = reducer.fit_transform(data)  # embedding contains the new coordinates of datapoints in 3D space
+#2.3. Fit UMAP
+print("\nRunning UMAP (this will take 5-15 minutes)...")
+print("Please be patient...")
+embedding = reducer.fit_transform(data)
+print(f"✓ UMAP complete! Generated {embedding.shape}")
 
 #3. Save dataframe
-# Add UMAP coordinates to dataframe
+print("\nSaving results...")
 for i in range(N_COMP):
     df['UMAP'+str(i+1)] = embedding[:,i]
 
-# Save dataframe
-df.to_pickle(os.path.join(os.path.sep, DATA, 'df_umap.pkl'))
+df.to_pickle(os.path.join(DATA, 'df_umap.pkl'))
+print(f"✓ Saved to {os.path.join(DATA, 'df_umap.pkl')}")
+print("\n✓✓✓ UMAP GENERATION COMPLETE! ✓✓✓")
