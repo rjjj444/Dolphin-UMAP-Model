@@ -1,0 +1,4 @@
+import sys
+print("Python executable:", sys.executable)
+print("\nInstalled packages with 'hdb' in name:")
+!pip list | findstr hdb
