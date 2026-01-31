@@ -1,101 +1,3 @@
-# Generating Spectrogram #01
-
-import pandas as pd
-import numpy as np
-import pickle
-import os
-from pathlib import Path
-import umap
-import random
-import librosa
-import librosa.display
-import matplotlib.pyplot as plt
-import sys 
-sys.path.insert(0, '..')
-%matplotlib inline
-
-from functions.audio_functions import generate_mel_spectrogram, read_wavfile
-from functions.preprocessing_functions import calc_zscore, pad_spectro
-
-
-# Function for plotting example spectrograms
-def plot_examples(df, random_indices, spec_type):
-    
-    if spec_type in df.columns:
-    
-        df_subset = df.iloc[random_indices,:]
-        specs = df_subset[spec_type].values
-
-        plt.figure(figsize=(len(random_indices)*3,3))
-        
-        for i,spec in enumerate(specs):
-            plt.subplot(1, len(random_indices), i+1)
-            plt.imshow(spec, origin='lower')
-        plt.suptitle(spec_type)
-        plt.tight_layout()
-    else:
-        print("Error: ",spec_type, " not in df columns")
-
-    
-######################################
-# Set important paths
-P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder" # project directory, by default set to parent directory of your current working directory
-AUDIO_IN = os.path.join(P_DIR, 'audio')                                    # --> audio directory, contains audio (.wav) files
-DATA = os.path.join(P_DIR, 'data')                                         # --> empty data directory, output files will be put here
-
-# Information about the info_file.csv
-LABEL_COL = "label"                                 # -->name of column that contains labels
-
-NA_DESCRIPTORS = [0, np.nan, "NA", "na",            # Which values indicate that this vocalization is unlabelled?
-                  "not available", "None",          # (add your NA descriptor if not yet in list)
-                  "Unknown", "unknown", None, ""]        
-                                                     
-NEW_NA_INDICATOR = "unknown"                        # all vocalizations without label will be relabelled to
-                                                    # "unkown"
-
-# Other parameters
-PLOT_EXAMPLES = True                                # Do you want to plot example spectrograms?
-
-##################################
-# Check if directories are present
-
-if not os.path.isdir(AUDIO_IN):
-    print("No audio directory found")
-
-if not os.path.isdir(DATA):
-    os.mkdir(DATA)
-
-
-#By default, only mel-transformed, Decibel-transformed spectrograms are generated.
-#If desired, you can also create denoised spectrograms (bandpass-filtered to remove frequencies that likely only contain noise, or median subtracted to remove the effect of broadband impulse noise) and time-stretched spectrograms, e.g. stretch all spectrograms to the same duration. This may be helpful, if you do not wish to differentiate calls with the same shape, but different duration.
-#Set the variables BANDPASS_FILTER, MEDIAN_SUB or STRETCH to "True" to create these additional, alternative spectrograms. You can also combine these preprocessing steps in any possible way (e.g. create bandpass-filtered, median-subtracted spectrograms) or add your own preprocessing steps.
-
-BANDPASS_FILTER = False  # should bandpass-filtered spectrograms be generated?
-MEDIAN_SUB = False  # should median-subtracted spectrograms be generated (reduce impulse noise)?
-STRETCH = False    # should time-stretched spectrograms be generated (all stretched to max. duration in dataset)?
-
-######################################################
-#1 Read in files
-info_file = os.path.join(os.path.sep, DATA, 'info_file.csv')
-
-if os.path.isfile(info_file):
-    #df = pd.read_csv(info_file, sep=";", index_col=[0])
-    df = pd.read_csv(info_file, sep=";")
-else:
-    print("Input file missing: ", info_file)
-    print("Will create default input file without labels")
-    audiofiles = os.listdir(AUDIO_IN)
-    if len(audiofiles)>0:
-        df = pd.DataFrame({'filename': [os.path.basename(x) for x in audiofiles], 'label': ["unknown"] * len(audiofiles)})
-
-df
-
-#Table produced (6428 rows × 4 columns)
-
-#####################################################
-#Check if all audio files are in AUDIO_IN directory
-audiofiles = df['filename'].values             
-files_in_audio_directory = os.listdir(AUDIO_IN)
 
 # Are there any files that are in the info_file.csv, but not in AUDIO_IN?
 missing_files = list(set(audiofiles) - set(files_in_audio_directory))
@@ -127,7 +29,8 @@ df['duration_s'] = [x.shape[0] for x in df['raw_audio']]/df['samplerate_hz']
 
 # It can be helpful to plot the distribution to find a good cutoff
 
-#n, bins, patches = plt.hist(df['duration_s'])
+#n, bins, patches = plt.hist(df['durati
+on_s'])
 
 MIN_DUR = 0  # --> minimum duration of calls in seconds
 MAX_DUR = 0.5 # --> maximum duration of calls in seconds
@@ -141,6 +44,7 @@ df = df.loc[df['duration_s']<=MAX_DUR,:]
 #Dropped  0 rows above  0.5 s (max_dur)
 
 ##################################################
+
 #4. Generate mel-spectrograms
 #In this step, spectrograms are generated from audio files via short-time fourier transformation. Spectrograms capture the frequency components of a signal over time. A spectrogram is a 2D matrix, where each value represents the signal intensity in a specific time (columns) and frequency bin (row). In this case, the frequency axis of the spectrograms are also Mel-transformed (a logarithmic scale) and signal intensity is expressed on a Decibel scale.
 
@@ -221,6 +125,7 @@ if MEDIAN_SUB:
 
 if MEDIAN_SUB and PLOT_EXAMPLES: plot_examples(df, random_indices, 'denoised_spectrograms')
 
+
 LOWCUT = 300.0              # lower bound in Hz (all signals below this bound will be removed)  
 HIGHCUT = 3000.0            # upper bound in Hz (all signals above this bound will be removed)
 N_MELS_FILTERED = N_MELS    # N_Mels. Depending on your cutoffs, it may make sense to adapt these, too! 
@@ -258,7 +163,8 @@ if BANDPASS_FILTER:
     # create spectrograms from filtered audio      
     df['filtered_spectrograms'] = df.apply(lambda row: generate_mel_spectrogram(data = row['filtered_audio'],
                                                                                 rate = row['samplerate_hz'],
-                                                                            n_mels = N_MELS_FILTERED,
+                                                                                n_mels = N_ME
+LS_FILTERED,
                                                                                 window = WINDOW,
                                                                                 fft_win = FFT_WIN,
                                                                                 fft_hop = FFT_HOP,
@@ -281,7 +187,7 @@ if STRETCH:
     df['stretched_spectrograms'] = df.apply(lambda row: generate_stretched_mel_spectrogram(row['raw_audio'],
                                                                                            row['samplerate_hz'],
                                                                                            row['duration_s'],
-                                                                            N_MELS,
+                                                                                           N_MELS,
                                                                                            WINDOW,
                                                                                            FFT_WIN,
                                                                                            FFT_HOP,
@@ -289,6 +195,7 @@ if STRETCH:
                                             axis=1)
 
 if STRETCH and PLOT_EXAMPLES: plot_examples(df, random_indices, 'stretched_spectrograms')
+
 
 ########################################
 #!!![Optional: Create any combination of preprocessing steps]
