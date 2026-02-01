@@ -1,0 +1,5 @@
+########
+#Added in to get pygraphviz package for visualization functions
+!pip install networkx
+!conda install -c conda-forge pygraphviz -y
+#######
