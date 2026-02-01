@@ -1,5 +1,515 @@
 #UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
 
+#UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP INTERACTIVE VISUALIZATION - PART 2 (TOOL)")
+print("="*70)
+
+# ****************** IMPORTANT INFO ************************************
+# 
+# Either run this in jupyter notebook, OR type in commmand line:
+# > voila <your_path_to_notebook>
+#
+# for example: 
+# > voila home/documents/umap_project/02_UMAP_viz_tool.ipynb
+#
+# to see the visualization in your browser (recommended)
+# (voila must be installed)
+# https://voila.readthedocs.io/en/stable/using.html
+
+
+# Also make sure to have enabled jupyterwidgets extension for jupyter notebook with:
+
+# > jupyter nbextension enable --py widgetsnbextension
+#
+# ****************** IMPORTANT INFO ************************************
+
+#This script generates the interactive visualization. Part 1 (Prep) must have been run previously. 
+
+# *** Install required package if needed ***
+print("\nChecking for required packages...")
+try:
+    import anywidget
+    print("✓ anywidget already installed")
+except ImportError:
+    print("Installing anywidget...")
+    import subprocess
+    import sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "anywidget"])
+    print("✓ anywidget installed successfully")
+    print("⚠️ Please restart your kernel (Kernel → Restart) and re-run this cell")
+    print("   (Required for the installation to take effect)")
+    # Stop execution here so user can restart
+    raise SystemExit("Restart kernel and re-run this cell")
+
+####The following minimal structure and files are required in the project directory:
+
+#    ├── data
+#    │   ├── df.pkl         <- pickled pandas dataframe with metadata and UMAP coordinates (generated in Part 1)
+#    │   ├── image_data.pkl <- pickled dictionary containing the spectrogram images (by callID key)
+#                              (generated in Part 1)  
+
+####The following columns must exist (somewhere) in the pickled dataframe df.pkl:
+
+#    | filename   | spectrograms    |  samplerate_hz |    raw_audio    |   callID
+#    ------------------------------------------------------------------|------------
+#    | call_1.wav |  2D np.array    |      8000      |    1D np.array  |   call_1
+#    | call_2.wav |  ...            |      48000     |    ....         |   call_2
+#    | ...        |  ...            |      ....      |    ....         |   ...
+
+#### The following files are generated in this script:
+
+
+#None.
+
+#[Plots can be saved as img files if desired]
+
+# *** Import statements and constants ***
+
+print("\nStep 1: Importing libraries...")
+
+import numpy as np
+import plotly
+from plotly.offline import iplot, plot
+from plotly.offline import init_notebook_mode
+from plotly import graph_objs as go
+init_notebook_mode()
+
+import pandas as pd
+import pickle
+import os
+import seaborn as sns
+from ipywidgets import Image, HTML, Layout, Output, VBox, HBox
+from IPython.display import Audio, display
+from pathlib import Path
+import pickle
+import sys 
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+# ... rest of your code continues unchanged ...#UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP INTERACTIVE VISUALIZATION - PART 2 (TOOL)")
+print("="*70)
+
+# ****************** IMPORTANT INFO ************************************
+# 
+# Either run this in jupyter notebook, OR type in commmand line:
+# > voila <your_path_to_notebook>
+#
+# for example: 
+# > voila home/documents/umap_project/02_UMAP_viz_tool.ipynb
+#
+# to see the visualization in your browser (recommended)
+# (voila must be installed)
+# https://voila.readthedocs.io/en/stable/using.html
+
+
+# Also make sure to have enabled jupyterwidgets extension for jupyter notebook with:
+
+# > jupyter nbextension enable --py widgetsnbextension
+#
+# ****************** IMPORTANT INFO ************************************
+
+#This script generates the interactive visualization. Part 1 (Prep) must have been run previously. 
+
+# *** Install required package if needed ***
+print("\nChecking for required packages...")
+try:
+    import anywidget
+    print("✓ anywidget already installed")
+except ImportError:
+    print("Installing anywidget...")
+    import subprocess
+    import sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "anywidget"])
+    print("✓ anywidget installed successfully")
+    print("⚠️ Please restart your kernel (Kernel → Restart) and re-run this cell")
+    print("   (Required for the installation to take effect)")
+    # Stop execution here so user can restart
+    raise SystemExit("Restart kernel and re-run this cell")
+
+####The following minimal structure and files are required in the project directory:
+
+#    ├── data
+#    │   ├── df.pkl         <- pickled pandas dataframe with metadata and UMAP coordinates (generated in Part 1)
+#    │   ├── image_data.pkl <- pickled dictionary containing the spectrogram images (by callID key)
+#                              (generated in Part 1)  
+
+####The following columns must exist (somewhere) in the pickled dataframe df.pkl:
+
+#    | filename   | spectrograms    |  samplerate_hz |    raw_audio    |   callID
+#    ------------------------------------------------------------------|------------
+#    | call_1.wav |  2D np.array    |      8000      |    1D np.array  |   call_1
+#    | call_2.wav |  ...            |      48000     |    ....         |   call_2
+#    | ...        |  ...            |      ....      |    ....         |   ...
+
+#### The following files are generated in this script:
+
+
+#None.
+
+#[Plots can be saved as img files if desired]
+
+# *** Import statements and constants ***
+
+print("\nStep 1: Importing libraries...")
+
+import numpy as np
+import plotly
+from plotly.offline import iplot, plot
+from plotly.offline import init_notebook_mode
+from plotly import graph_objs as go
+init_notebook_mode()
+
+import pandas as pd
+import pickle
+import os
+import seaborn as sns
+from ipywidgets import Image, HTML, Layout, Output, VBox, HBox
+from IPython.display import Audio, display
+from pathlib import Path
+import pickle
+import sys 
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+# ... rest of your code continues unchanged ...#UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP INTERACTIVE VISUALIZATION - PART 2 (TOOL)")
+print("="*70)
+
+# ****************** IMPORTANT INFO ************************************
+# 
+# Either run this in jupyter notebook, OR type in commmand line:
+# > voila <your_path_to_notebook>
+#
+# for example: 
+# > voila home/documents/umap_project/02_UMAP_viz_tool.ipynb
+#
+# to see the visualization in your browser (recommended)
+# (voila must be installed)
+# https://voila.readthedocs.io/en/stable/using.html
+
+
+# Also make sure to have enabled jupyterwidgets extension for jupyter notebook with:
+
+# > jupyter nbextension enable --py widgetsnbextension
+#
+# ****************** IMPORTANT INFO ************************************
+
+#This script generates the interactive visualization. Part 1 (Prep) must have been run previously. 
+
+# *** Install required package if needed ***
+print("\nChecking for required packages...")
+try:
+    import anywidget
+    print("✓ anywidget already installed")
+except ImportError:
+    print("Installing anywidget...")
+    import subprocess
+    import sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "anywidget"])
+    print("✓ anywidget installed successfully")
+    print("⚠️ Please restart your kernel (Kernel → Restart) and re-run this cell")
+    print("   (Required for the installation to take effect)")
+    # Stop execution here so user can restart
+    raise SystemExit("Restart kernel and re-run this cell")
+
+####The following minimal structure and files are required in the project directory:
+
+#    ├── data
+#    │   ├── df.pkl         <- pickled pandas dataframe with metadata and UMAP coordinates (generated in Part 1)
+#    │   ├── image_data.pkl <- pickled dictionary containing the spectrogram images (by callID key)
+#                              (generated in Part 1)  
+
+####The following columns must exist (somewhere) in the pickled dataframe df.pkl:
+
+#    | filename   | spectrograms    |  samplerate_hz |    raw_audio    |   callID
+#    ------------------------------------------------------------------|------------
+#    | call_1.wav |  2D np.array    |      8000      |    1D np.array  |   call_1
+#    | call_2.wav |  ...            |      48000     |    ....         |   call_2
+#    | ...        |  ...            |      ....      |    ....         |   ...
+
+#### The following files are generated in this script:
+
+
+#None.
+
+#[Plots can be saved as img files if desired]
+
+# *** Import statements and constants ***
+
+print("\nStep 1: Importing libraries...")
+
+import numpy as np
+import plotly
+from plotly.offline import iplot, plot
+from plotly.offline import init_notebook_mode
+from plotly import graph_objs as go
+init_notebook_mode()
+
+import pandas as pd
+import pickle
+import os
+import seaborn as sns
+from ipywidgets import Image, HTML, Layout, Output, VBox, HBox
+from IPython.display import Audio, display
+from pathlib import Path
+import pickle
+import sys 
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+# ... rest of your code continues unchanged ...
+
+print("\nStep 2: Setting up parameters...")
+
+LABEL_COL = "label"       # Column that contains label - calls in the plot will be colored by this column
+ID_COL = "callID"         # Column that contains call identifier
+AUDIO_COL = "raw_audio"   # Column that contains audio data, which is played back. 
+                          # could also use filtered_audio
+    
+HOVER_COLS = [LABEL_COL, ID_COL] # hover_details are those data that will 
+                                 # be provided in the info table when hovering
+                                 # over the plot. Add any columns of df that you like.
+
+print(f"✓ Label column: {LABEL_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Audio column: {AUDIO_COL}")
+print(f"✓ Hover columns: {HOVER_COLS}")
+
+distinct_colors_20 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+                       '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', 
+
+                       '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
+                       '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', 
+                       '#ffffff', '#000000']  
+
+# *** Load data ***
+
+print("\nStep 3: Loading data...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])    # project directory
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+
+print(f"Project directory: {P_DIR}")
+print(f"Data directory: {DATA}")
+
+# Load dataframe
+df_path = os.path.join(DATA, 'df_umap.pkl')
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+# Load image data (deserialize)
+image_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nLoading image data from: {image_path}")
+with open(image_path, 'rb') as handle:
+    image_data = pickle.load(handle)
+print(f"✓ Loaded {len(image_data)} spectrogram images")
+
+if ID_COL not in df.columns:
+    print(f"✗ ERROR: Missing identifier column: {ID_COL}")
+    raise ValueError(f"Column '{ID_COL}' not found in dataframe")
+else:
+    print(f"✓ ID column '{ID_COL}' found")
+
+# *** Set label colors ***
+
+print("\nStep 4: Setting up colors...")
+
+labeltypes = sorted(list(set(df[LABEL_COL])))
+print(f"Found {len(labeltypes)} unique labels: {labeltypes[:5]}{'...' if len(labeltypes) > 5 else ''}")
+
+if len(labeltypes)<=len(distinct_colors_20):
+    color_dict = dict(zip(labeltypes, distinct_colors_20[0:len(labeltypes)]))
+    print(f"✓ Assigned unique colors to all {len(labeltypes)} labels")
+else:
+    # if > 20 different labels, some will have the same color
+    print(f"⚠️ Warning: More than 20 labels detected - some will share colors")
+    distinct_colors = distinct_colors_20*len(labeltypes)
+    color_dict = dict(zip(labeltypes, distinct_colors[0:len(labeltypes)]))
+    print(f"✓ Assigned colors to all {len(labeltypes)} labels (with repetition)")
+
+# hover_details are those data that will be provided in the info table when hovering
+# over datapoints
+
+hover_details = HOVER_COLS
+
+# Everything here is separated by labeltype, so that all datapoints from one specific label have their own trace
+
+print("\nStep 5: Organizing data by label type...")
+
+audio_dict = {} # dictionary that contains audio data for each labeltype
+sr_dict = {} # dictionary that contains samplerate data for each labeltype
+sub_df_dict = {} # dictionary that contains the dataframe for each labeltype
+
+# build dictionary
+for i,labeltype in enumerate(labeltypes):
+    sub_df = df.loc[df.label==labeltype,:]    
+    sub_df_dict[i] = sub_df
+    audio_dict[i] = sub_df[AUDIO_COL]
+    sr_dict[i] = sub_df['samplerate_hz']
+
+print(f"✓ Organized data into {len(labeltypes)} label groups")
+
+# build traces
+
+print("\nStep 6: Building 3D plot traces...")
+
+traces = []
+for i,labeltype in enumerate(labeltypes):
+    sub_df = sub_df_dict[i]
+    trace = go.Scatter3d(x=sub_df.UMAP1, 
+                         y=sub_df.UMAP2, 
+                         z=sub_df.UMAP3, 
+                         mode='markers',
+                         marker=dict(size=4,
+                                     color=color_dict[labeltype],
+                                     opacity=0.8),
+                         name=labeltype,
+                         hovertemplate = [x for x in sub_df[LABEL_COL]])
+    traces.append(trace)
+
+print(f"✓ Created {len(traces)} plot traces")
+
+print("\nStep 7: Creating plot layout...")
+
+layout = go.Layout(
+    scene=go.layout.Scene(
+        xaxis = go.layout.scene.XAxis(title='UMAP1'),
+        yaxis = go.layout.scene.YAxis(title='UMAP2'),
+        zaxis = go.layout.scene.ZAxis(title='UMAP3')),
+        height = 1000,
+        width = 1000)
+
+figure = go.Figure(data=traces, layout=layout)
+fig = go.FigureWidget(figure)
+
+print("✓ Plot layout created (1000x1000)")
+
+# Initialize with any image (taking the first in the dictionary)
+
+print("\nStep 8: Setting up interactive widgets...")
+
+image_widget = Image(
+    value=image_data[list(image_data.keys())[0]],
+    layout=Layout(height='189px', width='300px')
+)
+
+details = HTML(layout=Layout(width='20%'))
+
+print("✓ Image widget initialized")
+print("✓ Details widget initialized")
+
+# define what happens when hovering over datapoint
+def hover_fn(trace, points, state):
+    
+    if points.point_inds:
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        sub_df = sub_df_dict[trace_ind]
+        ind = points.point_inds[0]
+        # Update image widget
+        img_ind = sub_df.iloc[ind][ID_COL]
+        image_widget.value = image_data[img_ind]  
+
+        # Update details
+        details.value = sub_df.iloc[ind][hover_details].to_frame().to_html()
+
+for i in range(len(traces)):
+    fig.data[i].on_hover(hover_fn)
+
+print("✓ Hover functionality attached")
+
+# audio-playback function
+def play_audio(ind, i):
+    data = audio_dict[i]
+    srs = sr_dict[i]
+    display(Audio(data.iloc[ind], rate=srs.iloc[ind], autoplay=True))
+    
+audio_widget = Output()
+audio_widget.layout.visibility = 'hidden'
+
+print("✓ Audio playback widget initialized")
+
+# define what happens when clicking on datapoint
+def click_fn(trace, points, selector):
+    
+    if points.point_inds:
+        
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        ind = points.point_inds[0]
+        
+        # play audio
+        with audio_widget:
+            play_audio(ind, trace_ind)
+
+for i in range(len(traces)):
+    fig.data[i].on_click(click_fn)
+
+print("✓ Click functionality attached")
+
+#Instructions:
+
+print("\n" + "="*70)
+print("INTERACTIVE VISUALIZATION READY!")
+print("="*70)
+
+print("\nInstructions:")
+print("  • Hover over datapoints to see spectrogram and metadata")
+print("  • Click legend items to show/hide traces (label groups)")
+print("  • Click on a datapoint to trigger audio playback")
+print("  • For better readability, use voila:")
+print("    > voila <path-to-notebook.ipynb>")
+
+#Hover over datapoints to see the respective spectrogram and metadata in the table. Click on the legend to show or hide traces (datapoint groups). Click on a datapoint to trigger audio playback. Readibility is better when using voila (navigate to the jupyter notebook file in your anaconda prompt (mac: terminal) and run > voila <path-to-03_UMAP_viz_tool.ipynb>)
+
+# Put everything together.
+
+print("\nStep 9: Rendering visualization...")
+
+# This renders the plot within jupyter notebook. Install voila to convert the notebook into a standalone web app 
+# (see https://voila.readthedocs.io/en/stable/using.html for details)
+# Once installed, navigate to the jupyter notebook file in your file system and run
+# > voila <path-to-02_viz_tool.ipynb> 
+
+# adjust vertical (VBox) and horizontal (HBoxes) if readibility is not good.
+
+VBox([details,
+      HBox([image_widget,fig], layout=Layout(flex="none")),
+      audio_widget
+     ])
+
+#Ex. output: VBox(children=(HTML(value='<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;"…#UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP INTERACTIVE VISUALIZATION - PART 2 (TOOL)")
+print("="*70)
+
 # ****************** IMPORTANT INFO ************************************
 # 
 # Either run this in jupyter notebook, OR type in commmand line:
@@ -37,11 +547,14 @@
 
 #### The following files are generated in this script:
 
+
 #None.
 
 #[Plots can be saved as img files if desired]
 
 # *** Import statements and constants ***
+
+print("\nStep 1: Importing libraries...")
 
 import numpy as np
 import plotly
@@ -61,6 +574,10 @@ import pickle
 import sys 
 sys.path.insert(0, '..')
 
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up parameters...")
+
 LABEL_COL = "label"       # Column that contains label - calls in the plot will be colored by this column
 ID_COL = "callID"         # Column that contains call identifier
 AUDIO_COL = "raw_audio"   # Column that contains audio data, which is played back. 
@@ -70,38 +587,66 @@ HOVER_COLS = [LABEL_COL, ID_COL] # hover_details are those data that will
                                  # be provided in the info table when hovering
                                  # over the plot. Add any columns of df that you like.
 
+print(f"✓ Label column: {LABEL_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Audio column: {AUDIO_COL}")
+print(f"✓ Hover columns: {HOVER_COLS}")
+
 distinct_colors_20 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
                        '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', 
+
                        '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
                        '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', 
                        '#ffffff', '#000000']  
 
 # *** Load data ***
 
-P_DIR = str(Path(os.getcwd()).parents[0])    # project directory
-DATA = os.path.join(os.path.sep, P_DIR, 'data') 
+print("\nStep 3: Loading data...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])    # project directory
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+
+print(f"Project directory: {P_DIR}")
+print(f"Data directory: {DATA}")
 
 # Load dataframe
-df = pd.read_pickle(os.path.join(os.path.sep, DATA, 'df_umap.pkl'))
+df_path = os.path.join(DATA, 'df_umap.pkl')
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
 
 # Load image data (deserialize)
-with open(os.path.join(os.path.sep, DATA, 'image_data.pkl'), 'rb') as handle:
+image_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nLoading image data from: {image_path}")
+with open(image_path, 'rb') as handle:
     image_data = pickle.load(handle)
+print(f"✓ Loaded {len(image_data)} spectrogram images")
 
 if ID_COL not in df.columns:
-    print("Missing identifier column: ", ID_COL)
-    raise
+    print(f"✗ ERROR: Missing identifier column: {ID_COL}")
+    raise ValueError(f"Column '{ID_COL}' not found in dataframe")
+else:
+    print(f"✓ ID column '{ID_COL}' found")
 
 # *** Set label colors ***
 
+print("\nStep 4: Setting up colors...")
+
 labeltypes = sorted(list(set(df[LABEL_COL])))
+print(f"Found {len(labeltypes)} unique labels: {labeltypes[:5]}{'...' if len(labeltypes) > 5 else ''}")
 
 if len(labeltypes)<=len(distinct_colors_20):
     color_dict = dict(zip(labeltypes, distinct_colors_20[0:len(labeltypes)]))
+    print(f"✓ Assigned unique colors to all {len(labeltypes)} labels")
 else:
     # if > 20 different labels, some will have the same color
+    print(f"⚠️ Warning: More than 20 labels detected - some will share colors")
     distinct_colors = distinct_colors_20*len(labeltypes)
     color_dict = dict(zip(labeltypes, distinct_colors[0:len(labeltypes)]))
+    print(f"✓ Assigned colors to all {len(labeltypes)} labels (with repetition)")
 
 # hover_details are those data that will be provided in the info table when hovering
 # over datapoints
@@ -110,10 +655,11 @@ hover_details = HOVER_COLS
 
 # Everything here is separated by labeltype, so that all datapoints from one specific label have their own trace
 
+print("\nStep 5: Organizing data by label type...")
+
 audio_dict = {} # dictionary that contains audio data for each labeltype
 sr_dict = {} # dictionary that contains samplerate data for each labeltype
 sub_df_dict = {} # dictionary that contains the dataframe for each labeltype
-
 
 # build dictionary
 for i,labeltype in enumerate(labeltypes):
@@ -122,7 +668,12 @@ for i,labeltype in enumerate(labeltypes):
     audio_dict[i] = sub_df[AUDIO_COL]
     sr_dict[i] = sub_df['samplerate_hz']
 
+print(f"✓ Organized data into {len(labeltypes)} label groups")
+
 # build traces
+
+print("\nStep 6: Building 3D plot traces...")
+
 traces = []
 for i,labeltype in enumerate(labeltypes):
     sub_df = sub_df_dict[i]
@@ -137,6 +688,10 @@ for i,labeltype in enumerate(labeltypes):
                          hovertemplate = [x for x in sub_df[LABEL_COL]])
     traces.append(trace)
 
+print(f"✓ Created {len(traces)} plot traces")
+
+print("\nStep 7: Creating plot layout...")
+
 layout = go.Layout(
     scene=go.layout.Scene(
         xaxis = go.layout.scene.XAxis(title='UMAP1'),
@@ -146,10 +701,13 @@ layout = go.Layout(
         width = 1000)
 
 figure = go.Figure(data=traces, layout=layout)
-
 fig = go.FigureWidget(figure)
 
+print("✓ Plot layout created (1000x1000)")
+
 # Initialize with any image (taking the first in the dictionary)
+
+print("\nStep 8: Setting up interactive widgets...")
 
 image_widget = Image(
     value=image_data[list(image_data.keys())[0]],
@@ -157,6 +715,9 @@ image_widget = Image(
 )
 
 details = HTML(layout=Layout(width='20%'))
+
+print("✓ Image widget initialized")
+print("✓ Details widget initialized")
 
 # define what happens when hovering over datapoint
 def hover_fn(trace, points, state):
@@ -173,9 +734,10 @@ def hover_fn(trace, points, state):
         # Update details
         details.value = sub_df.iloc[ind][hover_details].to_frame().to_html()
 
-
 for i in range(len(traces)):
     fig.data[i].on_hover(hover_fn)
+
+print("✓ Hover functionality attached")
 
 # audio-playback function
 def play_audio(ind, i):
@@ -185,6 +747,8 @@ def play_audio(ind, i):
     
 audio_widget = Output()
 audio_widget.layout.visibility = 'hidden'
+
+print("✓ Audio playback widget initialized")
 
 # define what happens when clicking on datapoint
 def click_fn(trace, points, selector):
@@ -202,11 +766,622 @@ def click_fn(trace, points, selector):
 for i in range(len(traces)):
     fig.data[i].on_click(click_fn)
 
+print("✓ Click functionality attached")
+
 #Instructions:
+
+print("\n" + "="*70)
+print("INTERACTIVE VISUALIZATION READY!")
+print("="*70)
+
+print("\nInstructions:")
+print("  • Hover over datapoints to see spectrogram and metadata")
+print("  • Click legend items to show/hide traces (label groups)")
+print("  • Click on a datapoint to trigger audio playback")
+print("  • For better readability, use voila:")
+print("    > voila <path-to-notebook.ipynb>")
 
 #Hover over datapoints to see the respective spectrogram and metadata in the table. Click on the legend to show or hide traces (datapoint groups). Click on a datapoint to trigger audio playback. Readibility is better when using voila (navigate to the jupyter notebook file in your anaconda prompt (mac: terminal) and run > voila <path-to-03_UMAP_viz_tool.ipynb>)
 
 # Put everything together.
+
+print("\nStep 9: Rendering visualization...")
+
+# This renders the plot within jupyter notebook. Install voila to convert the notebook into a standalone web app 
+# (see https://voila.readthedocs.io/en/stable/using.html for details)
+# Once installed, navigate to the jupyter notebook file in your file system and run
+# > voila <path-to-02_viz_tool.ipynb> 
+
+# adjust vertical (VBox) and horizontal (HBoxes) if readibility is not good.
+
+VBox([details,
+      HBox([image_widget,fig], layout=Layout(flex="none")),
+      audio_widget
+     ])
+
+#Ex. output: VBox(children=(HTML(value='<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;"…#UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP INTERACTIVE VISUALIZATION - PART 2 (TOOL)")
+print("="*70)
+
+# ****************** IMPORTANT INFO ************************************
+# 
+# Either run this in jupyter notebook, OR type in commmand line:
+# > voila <your_path_to_notebook>
+#
+# for example: 
+# > voila home/documents/umap_project/02_UMAP_viz_tool.ipynb
+#
+# to see the visualization in your browser (recommended)
+# (voila must be installed)
+# https://voila.readthedocs.io/en/stable/using.html
+
+
+# Also make sure to have enabled jupyterwidgets extension for jupyter notebook with:
+
+# > jupyter nbextension enable --py widgetsnbextension
+#
+# ****************** IMPORTANT INFO ************************************
+
+#This script generates the interactive visualization. Part 1 (Prep) must have been run previously. 
+####The following minimal structure and files are required in the project directory:
+
+#    ├── data
+#    │   ├── df.pkl         <- pickled pandas dataframe with metadata and UMAP coordinates (generated in Part 1)
+#    │   ├── image_data.pkl <- pickled dictionary containing the spectrogram images (by callID key)
+#                              (generated in Part 1)  
+
+####The following columns must exist (somewhere) in the pickled dataframe df.pkl:
+
+#    | filename   | spectrograms    |  samplerate_hz |    raw_audio    |   callID
+#    ------------------------------------------------------------------|------------
+#    | call_1.wav |  2D np.array    |      8000      |    1D np.array  |   call_1
+#    | call_2.wav |  ...            |      48000     |    ....         |   call_2
+#    | ...        |  ...            |      ....      |    ....         |   ...
+
+#### The following files are generated in this script:
+
+
+#None.
+
+#[Plots can be saved as img files if desired]
+
+# *** Import statements and constants ***
+
+print("\nStep 1: Importing libraries...")
+
+import numpy as np
+import plotly
+from plotly.offline import iplot, plot
+from plotly.offline import init_notebook_mode
+from plotly import graph_objs as go
+init_notebook_mode()
+
+import pandas as pd
+import pickle
+import os
+import seaborn as sns
+from ipywidgets import Image, HTML, Layout, Output, VBox, HBox
+from IPython.display import Audio, display
+from pathlib import Path
+import pickle
+import sys 
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up parameters...")
+
+LABEL_COL = "label"       # Column that contains label - calls in the plot will be colored by this column
+ID_COL = "callID"         # Column that contains call identifier
+AUDIO_COL = "raw_audio"   # Column that contains audio data, which is played back. 
+                          # could also use filtered_audio
+    
+HOVER_COLS = [LABEL_COL, ID_COL] # hover_details are those data that will 
+                                 # be provided in the info table when hovering
+                                 # over the plot. Add any columns of df that you like.
+
+print(f"✓ Label column: {LABEL_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Audio column: {AUDIO_COL}")
+print(f"✓ Hover columns: {HOVER_COLS}")
+
+distinct_colors_20 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+                       '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', 
+
+                       '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
+                       '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', 
+                       '#ffffff', '#000000']  
+
+# *** Load data ***
+
+print("\nStep 3: Loading data...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])    # project directory
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+
+print(f"Project directory: {P_DIR}")
+print(f"Data directory: {DATA}")
+
+# Load dataframe
+df_path = os.path.join(DATA, 'df_umap.pkl')
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+# Load image data (deserialize)
+image_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nLoading image data from: {image_path}")
+with open(image_path, 'rb') as handle:
+    image_data = pickle.load(handle)
+print(f"✓ Loaded {len(image_data)} spectrogram images")
+
+if ID_COL not in df.columns:
+    print(f"✗ ERROR: Missing identifier column: {ID_COL}")
+    raise ValueError(f"Column '{ID_COL}' not found in dataframe")
+else:
+    print(f"✓ ID column '{ID_COL}' found")
+
+# *** Set label colors ***
+
+print("\nStep 4: Setting up colors...")
+
+labeltypes = sorted(list(set(df[LABEL_COL])))
+print(f"Found {len(labeltypes)} unique labels: {labeltypes[:5]}{'...' if len(labeltypes) > 5 else ''}")
+
+if len(labeltypes)<=len(distinct_colors_20):
+    color_dict = dict(zip(labeltypes, distinct_colors_20[0:len(labeltypes)]))
+    print(f"✓ Assigned unique colors to all {len(labeltypes)} labels")
+else:
+    # if > 20 different labels, some will have the same color
+    print(f"⚠️ Warning: More than 20 labels detected - some will share colors")
+    distinct_colors = distinct_colors_20*len(labeltypes)
+    color_dict = dict(zip(labeltypes, distinct_colors[0:len(labeltypes)]))
+    print(f"✓ Assigned colors to all {len(labeltypes)} labels (with repetition)")
+
+# hover_details are those data that will be provided in the info table when hovering
+# over datapoints
+
+hover_details = HOVER_COLS
+
+# Everything here is separated by labeltype, so that all datapoints from one specific label have their own trace
+
+print("\nStep 5: Organizing data by label type...")
+
+audio_dict = {} # dictionary that contains audio data for each labeltype
+sr_dict = {} # dictionary that contains samplerate data for each labeltype
+sub_df_dict = {} # dictionary that contains the dataframe for each labeltype
+
+# build dictionary
+for i,labeltype in enumerate(labeltypes):
+    sub_df = df.loc[df.label==labeltype,:]    
+    sub_df_dict[i] = sub_df
+    audio_dict[i] = sub_df[AUDIO_COL]
+    sr_dict[i] = sub_df['samplerate_hz']
+
+print(f"✓ Organized data into {len(labeltypes)} label groups")
+
+# build traces
+
+print("\nStep 6: Building 3D plot traces...")
+
+traces = []
+for i,labeltype in enumerate(labeltypes):
+    sub_df = sub_df_dict[i]
+    trace = go.Scatter3d(x=sub_df.UMAP1, 
+                         y=sub_df.UMAP2, 
+                         z=sub_df.UMAP3, 
+                         mode='markers',
+                         marker=dict(size=4,
+                                     color=color_dict[labeltype],
+                                     opacity=0.8),
+                         name=labeltype,
+                         hovertemplate = [x for x in sub_df[LABEL_COL]])
+    traces.append(trace)
+
+print(f"✓ Created {len(traces)} plot traces")
+
+print("\nStep 7: Creating plot layout...")
+
+layout = go.Layout(
+    scene=go.layout.Scene(
+        xaxis = go.layout.scene.XAxis(title='UMAP1'),
+        yaxis = go.layout.scene.YAxis(title='UMAP2'),
+        zaxis = go.layout.scene.ZAxis(title='UMAP3')),
+        height = 1000,
+        width = 1000)
+
+figure = go.Figure(data=traces, layout=layout)
+fig = go.FigureWidget(figure)
+
+print("✓ Plot layout created (1000x1000)")
+
+# Initialize with any image (taking the first in the dictionary)
+
+print("\nStep 8: Setting up interactive widgets...")
+
+image_widget = Image(
+    value=image_data[list(image_data.keys())[0]],
+    layout=Layout(height='189px', width='300px')
+)
+
+details = HTML(layout=Layout(width='20%'))
+
+print("✓ Image widget initialized")
+print("✓ Details widget initialized")
+
+# define what happens when hovering over datapoint
+def hover_fn(trace, points, state):
+    
+    if points.point_inds:
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        sub_df = sub_df_dict[trace_ind]
+        ind = points.point_inds[0]
+        # Update image widget
+        img_ind = sub_df.iloc[ind][ID_COL]
+        image_widget.value = image_data[img_ind]  
+
+        # Update details
+        details.value = sub_df.iloc[ind][hover_details].to_frame().to_html()
+
+for i in range(len(traces)):
+    fig.data[i].on_hover(hover_fn)
+
+print("✓ Hover functionality attached")
+
+# audio-playback function
+def play_audio(ind, i):
+    data = audio_dict[i]
+    srs = sr_dict[i]
+    display(Audio(data.iloc[ind], rate=srs.iloc[ind], autoplay=True))
+    
+audio_widget = Output()
+audio_widget.layout.visibility = 'hidden'
+
+print("✓ Audio playback widget initialized")
+
+# define what happens when clicking on datapoint
+def click_fn(trace, points, selector):
+    
+    if points.point_inds:
+        
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        ind = points.point_inds[0]
+        
+        # play audio
+        with audio_widget:
+            play_audio(ind, trace_ind)
+
+for i in range(len(traces)):
+    fig.data[i].on_click(click_fn)
+
+print("✓ Click functionality attached")
+
+#Instructions:
+
+print("\n" + "="*70)
+print("INTERACTIVE VISUALIZATION READY!")
+print("="*70)
+
+print("\nInstructions:")
+print("  • Hover over datapoints to see spectrogram and metadata")
+print("  • Click legend items to show/hide traces (label groups)")
+print("  • Click on a datapoint to trigger audio playback")
+print("  • For better readability, use voila:")
+print("    > voila <path-to-notebook.ipynb>")
+
+#Hover over datapoints to see the respective spectrogram and metadata in the table. Click on the legend to show or hide traces (datapoint groups). Click on a datapoint to trigger audio playback. Readibility is better when using voila (navigate to the jupyter notebook file in your anaconda prompt (mac: terminal) and run > voila <path-to-03_UMAP_viz_tool.ipynb>)
+
+# Put everything together.
+
+print("\nStep 9: Rendering visualization...")
+
+# This renders the plot within jupyter notebook. Install voila to convert the notebook into a standalone web app 
+# (see https://voila.readthedocs.io/en/stable/using.html for details)
+# Once installed, navigate to the jupyter notebook file in your file system and run
+# > voila <path-to-02_viz_tool.ipynb> 
+
+# adjust vertical (VBox) and horizontal (HBoxes) if readibility is not good.
+
+VBox([details,
+      HBox([image_widget,fig], layout=Layout(flex="none")),
+      audio_widget
+     ])
+
+#Ex. output: VBox(children=(HTML(value='<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;"…#UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP INTERACTIVE VISUALIZATION - PART 2 (TOOL)")
+print("="*70)
+
+# ****************** IMPORTANT INFO ************************************
+# 
+# Either run this in jupyter notebook, OR type in commmand line:
+# > voila <your_path_to_notebook>
+#
+# for example: 
+# > voila home/documents/umap_project/02_UMAP_viz_tool.ipynb
+#
+# to see the visualization in your browser (recommended)
+# (voila must be installed)
+# https://voila.readthedocs.io/en/stable/using.html
+
+
+# Also make sure to have enabled jupyterwidgets extension for jupyter notebook with:
+
+# > jupyter nbextension enable --py widgetsnbextension
+#
+# ****************** IMPORTANT INFO ************************************
+
+#This script generates the interactive visualization. Part 1 (Prep) must have been run previously. 
+####The following minimal structure and files are required in the project directory:
+
+#    ├── data
+#    │   ├── df.pkl         <- pickled pandas dataframe with metadata and UMAP coordinates (generated in Part 1)
+#    │   ├── image_data.pkl <- pickled dictionary containing the spectrogram images (by callID key)
+#                              (generated in Part 1)  
+
+####The following columns must exist (somewhere) in the pickled dataframe df.pkl:
+
+#    | filename   | spectrograms    |  samplerate_hz |    raw_audio    |   callID
+#    ------------------------------------------------------------------|------------
+#    | call_1.wav |  2D np.array    |      8000      |    1D np.array  |   call_1
+#    | call_2.wav |  ...            |      48000     |    ....         |   call_2
+#    | ...        |  ...            |      ....      |    ....         |   ...
+
+#### The following files are generated in this script:
+
+
+#None.
+
+#[Plots can be saved as img files if desired]
+
+# *** Import statements and constants ***
+
+print("\nStep 1: Importing libraries...")
+
+import numpy as np
+import plotly
+from plotly.offline import iplot, plot
+from plotly.offline import init_notebook_mode
+from plotly import graph_objs as go
+init_notebook_mode()
+
+import pandas as pd
+import pickle
+import os
+import seaborn as sns
+from ipywidgets import Image, HTML, Layout, Output, VBox, HBox
+from IPython.display import Audio, display
+from pathlib import Path
+import pickle
+import sys 
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up parameters...")
+
+LABEL_COL = "label"       # Column that contains label - calls in the plot will be colored by this column
+ID_COL = "callID"         # Column that contains call identifier
+AUDIO_COL = "raw_audio"   # Column that contains audio data, which is played back. 
+                          # could also use filtered_audio
+    
+HOVER_COLS = [LABEL_COL, ID_COL] # hover_details are those data that will 
+                                 # be provided in the info table when hovering
+                                 # over the plot. Add any columns of df that you like.
+
+print(f"✓ Label column: {LABEL_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Audio column: {AUDIO_COL}")
+print(f"✓ Hover columns: {HOVER_COLS}")
+
+distinct_colors_20 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+                       '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', 
+
+                       '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
+                       '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', 
+                       '#ffffff', '#000000']  
+
+# *** Load data ***
+
+print("\nStep 3: Loading data...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])    # project directory
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+
+print(f"Project directory: {P_DIR}")
+print(f"Data directory: {DATA}")
+
+# Load dataframe
+df_path = os.path.join(DATA, 'df_umap.pkl')
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+# Load image data (deserialize)
+image_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nLoading image data from: {image_path}")
+with open(image_path, 'rb') as handle:
+    image_data = pickle.load(handle)
+print(f"✓ Loaded {len(image_data)} spectrogram images")
+
+if ID_COL not in df.columns:
+    print(f"✗ ERROR: Missing identifier column: {ID_COL}")
+    raise ValueError(f"Column '{ID_COL}' not found in dataframe")
+else:
+    print(f"✓ ID column '{ID_COL}' found")
+
+# *** Set label colors ***
+
+print("\nStep 4: Setting up colors...")
+
+labeltypes = sorted(list(set(df[LABEL_COL])))
+print(f"Found {len(labeltypes)} unique labels: {labeltypes[:5]}{'...' if len(labeltypes) > 5 else ''}")
+
+if len(labeltypes)<=len(distinct_colors_20):
+    color_dict = dict(zip(labeltypes, distinct_colors_20[0:len(labeltypes)]))
+    print(f"✓ Assigned unique colors to all {len(labeltypes)} labels")
+else:
+    # if > 20 different labels, some will have the same color
+    print(f"⚠️ Warning: More than 20 labels detected - some will share colors")
+    distinct_colors = distinct_colors_20*len(labeltypes)
+    color_dict = dict(zip(labeltypes, distinct_colors[0:len(labeltypes)]))
+    print(f"✓ Assigned colors to all {len(labeltypes)} labels (with repetition)")
+
+# hover_details are those data that will be provided in the info table when hovering
+# over datapoints
+
+hover_details = HOVER_COLS
+
+# Everything here is separated by labeltype, so that all datapoints from one specific label have their own trace
+
+print("\nStep 5: Organizing data by label type...")
+
+audio_dict = {} # dictionary that contains audio data for each labeltype
+sr_dict = {} # dictionary that contains samplerate data for each labeltype
+sub_df_dict = {} # dictionary that contains the dataframe for each labeltype
+
+# build dictionary
+for i,labeltype in enumerate(labeltypes):
+    sub_df = df.loc[df.label==labeltype,:]    
+    sub_df_dict[i] = sub_df
+    audio_dict[i] = sub_df[AUDIO_COL]
+    sr_dict[i] = sub_df['samplerate_hz']
+
+print(f"✓ Organized data into {len(labeltypes)} label groups")
+
+# build traces
+
+print("\nStep 6: Building 3D plot traces...")
+
+traces = []
+for i,labeltype in enumerate(labeltypes):
+    sub_df = sub_df_dict[i]
+    trace = go.Scatter3d(x=sub_df.UMAP1, 
+                         y=sub_df.UMAP2, 
+                         z=sub_df.UMAP3, 
+                         mode='markers',
+                         marker=dict(size=4,
+                                     color=color_dict[labeltype],
+                                     opacity=0.8),
+                         name=labeltype,
+                         hovertemplate = [x for x in sub_df[LABEL_COL]])
+    traces.append(trace)
+
+print(f"✓ Created {len(traces)} plot traces")
+
+print("\nStep 7: Creating plot layout...")
+
+layout = go.Layout(
+    scene=go.layout.Scene(
+        xaxis = go.layout.scene.XAxis(title='UMAP1'),
+        yaxis = go.layout.scene.YAxis(title='UMAP2'),
+        zaxis = go.layout.scene.ZAxis(title='UMAP3')),
+        height = 1000,
+        width = 1000)
+
+figure = go.Figure(data=traces, layout=layout)
+fig = go.FigureWidget(figure)
+
+print("✓ Plot layout created (1000x1000)")
+
+# Initialize with any image (taking the first in the dictionary)
+
+print("\nStep 8: Setting up interactive widgets...")
+
+image_widget = Image(
+    value=image_data[list(image_data.keys())[0]],
+    layout=Layout(height='189px', width='300px')
+)
+
+details = HTML(layout=Layout(width='20%'))
+
+print("✓ Image widget initialized")
+print("✓ Details widget initialized")
+
+# define what happens when hovering over datapoint
+def hover_fn(trace, points, state):
+    
+    if points.point_inds:
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        sub_df = sub_df_dict[trace_ind]
+        ind = points.point_inds[0]
+        # Update image widget
+        img_ind = sub_df.iloc[ind][ID_COL]
+        image_widget.value = image_data[img_ind]  
+
+        # Update details
+        details.value = sub_df.iloc[ind][hover_details].to_frame().to_html()
+
+for i in range(len(traces)):
+    fig.data[i].on_hover(hover_fn)
+
+print("✓ Hover functionality attached")
+
+# audio-playback function
+def play_audio(ind, i):
+    data = audio_dict[i]
+    srs = sr_dict[i]
+    display(Audio(data.iloc[ind], rate=srs.iloc[ind], autoplay=True))
+    
+audio_widget = Output()
+audio_widget.layout.visibility = 'hidden'
+
+print("✓ Audio playback widget initialized")
+
+# define what happens when clicking on datapoint
+def click_fn(trace, points, selector):
+    
+    if points.point_inds:
+        
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        ind = points.point_inds[0]
+        
+        # play audio
+        with audio_widget:
+            play_audio(ind, trace_ind)
+
+for i in range(len(traces)):
+    fig.data[i].on_click(click_fn)
+
+print("✓ Click functionality attached")
+
+#Instructions:
+
+print("\n" + "="*70)
+print("INTERACTIVE VISUALIZATION READY!")
+print("="*70)
+
+print("\nInstructions:")
+print("  • Hover over datapoints to see spectrogram and metadata")
+print("  • Click legend items to show/hide traces (label groups)")
+print("  • Click on a datapoint to trigger audio playback")
+print("  • For better readability, use voila:")
+print("    > voila <path-to-notebook.ipynb>")
+
+#Hover over datapoints to see the respective spectrogram and metadata in the table. Click on the legend to show or hide traces (datapoint groups). Click on a datapoint to trigger audio playback. Readibility is better when using voila (navigate to the jupyter notebook file in your anaconda prompt (mac: terminal) and run > voila <path-to-03_UMAP_viz_tool.ipynb>)
+
+# Put everything together.
+
+print("\nStep 9: Rendering visualization...")
 
 # This renders the plot within jupyter notebook. Install voila to convert the notebook into a standalone web app 
 # (see https://voila.readthedocs.io/en/stable/using.html for details)
@@ -221,4 +1396,601 @@ VBox([details,
      ])
 
 #Ex. output: VBox(children=(HTML(value='<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;"…
+#UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
 
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP INTERACTIVE VISUALIZATION - PART 2 (TOOL)")
+print("="*70)
+
+# ****************** IMPORTANT INFO ************************************
+# 
+# Either run this in jupyter notebook, OR type in commmand line:
+# > voila <your_path_to_notebook>
+#
+# for example: 
+# > voila home/documents/umap_project/02_UMAP_viz_tool.ipynb
+#
+# to see the visualization in your browser (recommended)
+# (voila must be installed)
+# https://voila.readthedocs.io/en/stable/using.html
+
+
+# Also make sure to have enabled jupyterwidgets extension for jupyter notebook with:
+
+# > jupyter nbextension enable --py widgetsnbextension
+#
+# ****************** IMPORTANT INFO ************************************
+
+#This script generates the interactive visualization. Part 1 (Prep) must have been run previously. 
+####The following minimal structure and files are required in the project directory:
+
+#    ├── data
+#    │   ├── df.pkl         <- pickled pandas dataframe with metadata and UMAP coordinates (generated in Part 1)
+#    │   ├── image_data.pkl <- pickled dictionary containing the spectrogram images (by callID key)
+#                              (generated in Part 1)  
+
+####The following columns must exist (somewhere) in the pickled dataframe df.pkl:
+
+#    | filename   | spectrograms    |  samplerate_hz |    raw_audio    |   callID
+#    ------------------------------------------------------------------|------------
+#    | call_1.wav |  2D np.array    |      8000      |    1D np.array  |   call_1
+#    | call_2.wav |  ...            |      48000     |    ....         |   call_2
+#    | ...        |  ...            |      ....      |    ....         |   ...
+
+#### The following files are generated in this script:
+
+
+#None.
+
+#[Plots can be saved as img files if desired]
+
+# *** Import statements and constants ***
+
+print("\nStep 1: Importing libraries...")
+
+import numpy as np
+import plotly
+from plotly.offline import iplot, plot
+from plotly.offline import init_notebook_mode
+from plotly import graph_objs as go
+init_notebook_mode()
+
+import pandas as pd
+import pickle
+import os
+import seaborn as sns
+from ipywidgets import Image, HTML, Layout, Output, VBox, HBox
+from IPython.display import Audio, display
+from pathlib import Path
+import pickle
+import sys 
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up parameters...")
+
+LABEL_COL = "label"       # Column that contains label - calls in the plot will be colored by this column
+ID_COL = "callID"         # Column that contains call identifier
+AUDIO_COL = "raw_audio"   # Column that contains audio data, which is played back. 
+                          # could also use filtered_audio
+    
+HOVER_COLS = [LABEL_COL, ID_COL] # hover_details are those data that will 
+                                 # be provided in the info table when hovering
+                                 # over the plot. Add any columns of df that you like.
+
+print(f"✓ Label column: {LABEL_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Audio column: {AUDIO_COL}")
+print(f"✓ Hover columns: {HOVER_COLS}")
+
+distinct_colors_20 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+                       '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', 
+
+                       '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
+                       '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', 
+                       '#ffffff', '#000000']  
+
+# *** Load data ***
+
+print("\nStep 3: Loading data...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])    # project directory
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+
+print(f"Project directory: {P_DIR}")
+print(f"Data directory: {DATA}")
+
+# Load dataframe
+df_path = os.path.join(DATA, 'df_umap.pkl')
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+# Load image data (deserialize)
+image_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nLoading image data from: {image_path}")
+with open(image_path, 'rb') as handle:
+    image_data = pickle.load(handle)
+print(f"✓ Loaded {len(image_data)} spectrogram images")
+
+if ID_COL not in df.columns:
+    print(f"✗ ERROR: Missing identifier column: {ID_COL}")
+    raise ValueError(f"Column '{ID_COL}' not found in dataframe")
+else:
+    print(f"✓ ID column '{ID_COL}' found")
+
+# *** Set label colors ***
+
+print("\nStep 4: Setting up colors...")
+
+labeltypes = sorted(list(set(df[LABEL_COL])))
+print(f"Found {len(labeltypes)} unique labels: {labeltypes[:5]}{'...' if len(labeltypes) > 5 else ''}")
+
+if len(labeltypes)<=len(distinct_colors_20):
+    color_dict = dict(zip(labeltypes, distinct_colors_20[0:len(labeltypes)]))
+    print(f"✓ Assigned unique colors to all {len(labeltypes)} labels")
+else:
+    # if > 20 different labels, some will have the same color
+    print(f"⚠️ Warning: More than 20 labels detected - some will share colors")
+    distinct_colors = distinct_colors_20*len(labeltypes)
+    color_dict = dict(zip(labeltypes, distinct_colors[0:len(labeltypes)]))
+    print(f"✓ Assigned colors to all {len(labeltypes)} labels (with repetition)")
+
+# hover_details are those data that will be provided in the info table when hovering
+# over datapoints
+
+hover_details = HOVER_COLS
+
+# Everything here is separated by labeltype, so that all datapoints from one specific label have their own trace
+
+print("\nStep 5: Organizing data by label type...")
+
+audio_dict = {} # dictionary that contains audio data for each labeltype
+sr_dict = {} # dictionary that contains samplerate data for each labeltype
+sub_df_dict = {} # dictionary that contains the dataframe for each labeltype
+
+# build dictionary
+for i,labeltype in enumerate(labeltypes):
+    sub_df = df.loc[df.label==labeltype,:]    
+    sub_df_dict[i] = sub_df
+    audio_dict[i] = sub_df[AUDIO_COL]
+    sr_dict[i] = sub_df['samplerate_hz']
+
+print(f"✓ Organized data into {len(labeltypes)} label groups")
+
+# build traces
+
+print("\nStep 6: Building 3D plot traces...")
+
+traces = []
+for i,labeltype in enumerate(labeltypes):
+    sub_df = sub_df_dict[i]
+    trace = go.Scatter3d(x=sub_df.UMAP1, 
+                         y=sub_df.UMAP2, 
+                         z=sub_df.UMAP3, 
+                         mode='markers',
+                         marker=dict(size=4,
+                                     color=color_dict[labeltype],
+                                     opacity=0.8),
+                         name=labeltype,
+                         hovertemplate = [x for x in sub_df[LABEL_COL]])
+    traces.append(trace)
+
+print(f"✓ Created {len(traces)} plot traces")
+
+print("\nStep 7: Creating plot layout...")
+
+layout = go.Layout(
+    scene=go.layout.Scene(
+        xaxis = go.layout.scene.XAxis(title='UMAP1'),
+        yaxis = go.layout.scene.YAxis(title='UMAP2'),
+        zaxis = go.layout.scene.ZAxis(title='UMAP3')),
+        height = 1000,
+        width = 1000)
+
+figure = go.Figure(data=traces, layout=layout)
+fig = go.FigureWidget(figure)
+
+print("✓ Plot layout created (1000x1000)")
+
+# Initialize with any image (taking the first in the dictionary)
+
+print("\nStep 8: Setting up interactive widgets...")
+
+image_widget = Image(
+    value=image_data[list(image_data.keys())[0]],
+    layout=Layout(height='189px', width='300px')
+)
+
+details = HTML(layout=Layout(width='20%'))
+
+print("✓ Image widget initialized")
+print("✓ Details widget initialized")
+
+# define what happens when hovering over datapoint
+def hover_fn(trace, points, state):
+    
+    if points.point_inds:
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        sub_df = sub_df_dict[trace_ind]
+        ind = points.point_inds[0]
+        # Update image widget
+        img_ind = sub_df.iloc[ind][ID_COL]
+        image_widget.value = image_data[img_ind]  
+
+        # Update details
+        details.value = sub_df.iloc[ind][hover_details].to_frame().to_html()
+
+for i in range(len(traces)):
+    fig.data[i].on_hover(hover_fn)
+
+print("✓ Hover functionality attached")
+
+# audio-playback function
+def play_audio(ind, i):
+    data = audio_dict[i]
+    srs = sr_dict[i]
+    display(Audio(data.iloc[ind], rate=srs.iloc[ind], autoplay=True))
+    
+audio_widget = Output()
+audio_widget.layout.visibility = 'hidden'
+
+print("✓ Audio playback widget initialized")
+
+# define what happens when clicking on datapoint
+def click_fn(trace, points, selector):
+    
+    if points.point_inds:
+        
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        ind = points.point_inds[0]
+        
+        # play audio
+        with audio_widget:
+            play_audio(ind, trace_ind)
+
+for i in range(len(traces)):
+    fig.data[i].on_click(click_fn)
+
+print("✓ Click functionality attached")
+
+#Instructions:
+
+print("\n" + "="*70)
+print("INTERACTIVE VISUALIZATION READY!")
+print("="*70)
+
+print("\nInstructions:")
+print("  • Hover over datapoints to see spectrogram and metadata")
+print("  • Click legend items to show/hide traces (label groups)")
+print("  • Click on a datapoint to trigger audio playback")
+print("  • For better readability, use voila:")
+print("    > voila <path-to-notebook.ipynb>")
+
+#Hover over datapoints to see the respective spectrogram and metadata in the table. Click on the legend to show or hide traces (datapoint groups). Click on a datapoint to trigger audio playback. Readibility is better when using voila (navigate to the jupyter notebook file in your anaconda prompt (mac: terminal) and run > voila <path-to-03_UMAP_viz_tool.ipynb>)
+
+# Put everything together.
+
+print("\nStep 9: Rendering visualization...")
+
+# This renders the plot within jupyter notebook. Install voila to convert the notebook into a standalone web app 
+# (see https://voila.readthedocs.io/en/stable/using.html for details)
+# Once installed, navigate to the jupyter notebook file in your file system and run
+# > voila <path-to-02_viz_tool.ipynb> 
+
+# adjust vertical (VBox) and horizontal (HBoxes) if readibility is not good.
+
+VBox([details,
+      HBox([image_widget,fig], layout=Layout(flex="none")),
+      audio_widget
+     ])
+
+#Ex. output: VBox(children=(HTML(value='<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;"…
+#UMAP Interactive visualization of UMAP representations: Part 2 (Tool)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP INTERACTIVE VISUALIZATION - PART 2 (TOOL)")
+print("="*70)
+
+# ****************** IMPORTANT INFO ************************************
+# 
+# Either run this in jupyter notebook, OR type in commmand line:
+# > voila <your_path_to_notebook>
+#
+# for example: 
+# > voila home/documents/umap_project/02_UMAP_viz_tool.ipynb
+#
+# to see the visualization in your browser (recommended)
+# (voila must be installed)
+# https://voila.readthedocs.io/en/stable/using.html
+
+
+# Also make sure to have enabled jupyterwidgets extension for jupyter notebook with:
+
+# > jupyter nbextension enable --py widgetsnbextension
+#
+# ****************** IMPORTANT INFO ************************************
+
+#This script generates the interactive visualization. Part 1 (Prep) must have been run previously. 
+####The following minimal structure and files are required in the project directory:
+
+#    ├── data
+#    │   ├── df.pkl         <- pickled pandas dataframe with metadata and UMAP coordinates (generated in Part 1)
+#    │   ├── image_data.pkl <- pickled dictionary containing the spectrogram images (by callID key)
+#                              (generated in Part 1)  
+
+####The following columns must exist (somewhere) in the pickled dataframe df.pkl:
+
+#    | filename   | spectrograms    |  samplerate_hz |    raw_audio    |   callID
+#    ------------------------------------------------------------------|------------
+#    | call_1.wav |  2D np.array    |      8000      |    1D np.array  |   call_1
+#    | call_2.wav |  ...            |      48000     |    ....         |   call_2
+#    | ...        |  ...            |      ....      |    ....         |   ...
+
+#### The following files are generated in this script:
+
+
+#None.
+
+#[Plots can be saved as img files if desired]
+
+# *** Import statements and constants ***
+
+print("\nStep 1: Importing libraries...")
+
+import numpy as np
+import plotly
+from plotly.offline import iplot, plot
+from plotly.offline import init_notebook_mode
+from plotly import graph_objs as go
+init_notebook_mode()
+
+import pandas as pd
+import pickle
+import os
+import seaborn as sns
+from ipywidgets import Image, HTML, Layout, Output, VBox, HBox
+from IPython.display import Audio, display
+from pathlib import Path
+import pickle
+import sys 
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up parameters...")
+
+LABEL_COL = "label"       # Column that contains label - calls in the plot will be colored by this column
+ID_COL = "callID"         # Column that contains call identifier
+AUDIO_COL = "raw_audio"   # Column that contains audio data, which is played back. 
+                          # could also use filtered_audio
+    
+HOVER_COLS = [LABEL_COL, ID_COL] # hover_details are those data that will 
+                                 # be provided in the info table when hovering
+                                 # over the plot. Add any columns of df that you like.
+
+print(f"✓ Label column: {LABEL_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Audio column: {AUDIO_COL}")
+print(f"✓ Hover columns: {HOVER_COLS}")
+
+distinct_colors_20 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+                       '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', 
+
+                       '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
+                       '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', 
+                       '#ffffff', '#000000']  
+
+# *** Load data ***
+
+print("\nStep 3: Loading data...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])    # project directory
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+
+print(f"Project directory: {P_DIR}")
+print(f"Data directory: {DATA}")
+
+# Load dataframe
+df_path = os.path.join(DATA, 'df_umap.pkl')
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+# Load image data (deserialize)
+image_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nLoading image data from: {image_path}")
+with open(image_path, 'rb') as handle:
+    image_data = pickle.load(handle)
+print(f"✓ Loaded {len(image_data)} spectrogram images")
+
+if ID_COL not in df.columns:
+    print(f"✗ ERROR: Missing identifier column: {ID_COL}")
+    raise ValueError(f"Column '{ID_COL}' not found in dataframe")
+else:
+    print(f"✓ ID column '{ID_COL}' found")
+
+# *** Set label colors ***
+
+print("\nStep 4: Setting up colors...")
+
+labeltypes = sorted(list(set(df[LABEL_COL])))
+print(f"Found {len(labeltypes)} unique labels: {labeltypes[:5]}{'...' if len(labeltypes) > 5 else ''}")
+
+if len(labeltypes)<=len(distinct_colors_20):
+    color_dict = dict(zip(labeltypes, distinct_colors_20[0:len(labeltypes)]))
+    print(f"✓ Assigned unique colors to all {len(labeltypes)} labels")
+else:
+    # if > 20 different labels, some will have the same color
+    print(f"⚠️ Warning: More than 20 labels detected - some will share colors")
+    distinct_colors = distinct_colors_20*len(labeltypes)
+    color_dict = dict(zip(labeltypes, distinct_colors[0:len(labeltypes)]))
+    print(f"✓ Assigned colors to all {len(labeltypes)} labels (with repetition)")
+
+# hover_details are those data that will be provided in the info table when hovering
+# over datapoints
+
+hover_details = HOVER_COLS
+
+# Everything here is separated by labeltype, so that all datapoints from one specific label have their own trace
+
+print("\nStep 5: Organizing data by label type...")
+
+audio_dict = {} # dictionary that contains audio data for each labeltype
+sr_dict = {} # dictionary that contains samplerate data for each labeltype
+sub_df_dict = {} # dictionary that contains the dataframe for each labeltype
+
+# build dictionary
+for i,labeltype in enumerate(labeltypes):
+    sub_df = df.loc[df.label==labeltype,:]    
+    sub_df_dict[i] = sub_df
+    audio_dict[i] = sub_df[AUDIO_COL]
+    sr_dict[i] = sub_df['samplerate_hz']
+
+print(f"✓ Organized data into {len(labeltypes)} label groups")
+
+# build traces
+
+print("\nStep 6: Building 3D plot traces...")
+
+traces = []
+for i,labeltype in enumerate(labeltypes):
+    sub_df = sub_df_dict[i]
+    trace = go.Scatter3d(x=sub_df.UMAP1, 
+                         y=sub_df.UMAP2, 
+                         z=sub_df.UMAP3, 
+                         mode='markers',
+                         marker=dict(size=4,
+                                     color=color_dict[labeltype],
+                                     opacity=0.8),
+                         name=labeltype,
+                         hovertemplate = [x for x in sub_df[LABEL_COL]])
+    traces.append(trace)
+
+print(f"✓ Created {len(traces)} plot traces")
+
+print("\nStep 7: Creating plot layout...")
+
+layout = go.Layout(
+    scene=go.layout.Scene(
+        xaxis = go.layout.scene.XAxis(title='UMAP1'),
+        yaxis = go.layout.scene.YAxis(title='UMAP2'),
+        zaxis = go.layout.scene.ZAxis(title='UMAP3')),
+        height = 1000,
+        width = 1000)
+
+figure = go.Figure(data=traces, layout=layout)
+fig = go.FigureWidget(figure)
+
+print("✓ Plot layout created (1000x1000)")
+
+# Initialize with any image (taking the first in the dictionary)
+
+print("\nStep 8: Setting up interactive widgets...")
+
+image_widget = Image(
+    value=image_data[list(image_data.keys())[0]],
+    layout=Layout(height='189px', width='300px')
+)
+
+details = HTML(layout=Layout(width='20%'))
+
+print("✓ Image widget initialized")
+print("✓ Details widget initialized")
+
+# define what happens when hovering over datapoint
+def hover_fn(trace, points, state):
+    
+    if points.point_inds:
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        sub_df = sub_df_dict[trace_ind]
+        ind = points.point_inds[0]
+        # Update image widget
+        img_ind = sub_df.iloc[ind][ID_COL]
+        image_widget.value = image_data[img_ind]  
+
+        # Update details
+        details.value = sub_df.iloc[ind][hover_details].to_frame().to_html()
+
+for i in range(len(traces)):
+    fig.data[i].on_hover(hover_fn)
+
+print("✓ Hover functionality attached")
+
+# audio-playback function
+def play_audio(ind, i):
+    data = audio_dict[i]
+    srs = sr_dict[i]
+    display(Audio(data.iloc[ind], rate=srs.iloc[ind], autoplay=True))
+    
+audio_widget = Output()
+audio_widget.layout.visibility = 'hidden'
+
+print("✓ Audio playback widget initialized")
+
+# define what happens when clicking on datapoint
+def click_fn(trace, points, selector):
+    
+    if points.point_inds:
+        
+        # get the index of the data point being hovered
+        trace_ind = points.trace_index
+        ind = points.point_inds[0]
+        
+        # play audio
+        with audio_widget:
+            play_audio(ind, trace_ind)
+
+for i in range(len(traces)):
+    fig.data[i].on_click(click_fn)
+
+print("✓ Click functionality attached")
+
+#Instructions:
+
+print("\n" + "="*70)
+print("INTERACTIVE VISUALIZATION READY!")
+print("="*70)
+
+print("\nInstructions:")
+print("  • Hover over datapoints to see spectrogram and metadata")
+print("  • Click legend items to show/hide traces (label groups)")
+print("  • Click on a datapoint to trigger audio playback")
+print("  • For better readability, use voila:")
+print("    > voila <path-to-notebook.ipynb>")
+
+#Hover over datapoints to see the respective spectrogram and metadata in the table. Click on the legend to show or hide traces (datapoint groups). Click on a datapoint to trigger audio playback. Readibility is better when using voila (navigate to the jupyter notebook file in your anaconda prompt (mac: terminal) and run > voila <path-to-03_UMAP_viz_tool.ipynb>)
+
+# Put everything together.
+
+print("\nStep 9: Rendering visualization...")
+
+# This renders the plot within jupyter notebook. Install voila to convert the notebook into a standalone web app 
+# (see https://voila.readthedocs.io/en/stable/using.html for details)
+# Once installed, navigate to the jupyter notebook file in your file system and run
+# > voila <path-to-02_viz_tool.ipynb> 
+
+# adjust vertical (VBox) and horizontal (HBoxes) if readibility is not good.
+
+VBox([details,
+      HBox([image_widget,fig], layout=Layout(flex="none")),
+      audio_widget
+     ])
+
+#Ex. output: VBox(children=(HTML(value='<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;"…
