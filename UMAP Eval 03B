@@ -1,6 +1,14 @@
-#UMAP evaluation
+#03B UMAP evaluation
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP EVALUATION")
+print("="*70)
 
 #Import statements, constants and functions
+print("\nStep 1: Importing libraries...")
 
 import os
 import pandas as pd
@@ -22,18 +30,49 @@ from sklearn.neighbors import NearestNeighbors
 import librosa
 import librosa.display
 
-
 from functions.plot_functions import umap_2Dplot, umap_3Dplot, plotly_viz
 from functions.preprocessing_functions import calc_zscore, pad_spectro
 from functions.evaluation_functions import plot_within_without
 from functions.evaluation_functions import nn, sil
 
+print("✓ Libraries imported")
 
 %matplotlib inline
-from parameters.spec_params import FMIN, FMAX, FFT_WIN, FFT_HOP
 
-P_DIR = str(Path(os.getcwd()).parents[0])  
-DF_PATH = os.path.join(os.path.sep, P_DIR, 'data', 'df_umap.pkl') #  path to dataframe with UMAP coordinates
+print("\nStep 2: Loading parameters...")
+# Load parameters from file
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+sys.path.insert(0, os.path.join(P_DIR, 'parameters'))
+
+try:
+    from spec_params import FMIN, FMAX, FFT_WIN, FFT_HOP
+    print(f"✓ Loaded parameters: FMIN={FMIN}, FMAX={FMAX}")
+except ImportError as e:
+    print(f"⚠️ Could not import parameters: {e}")
+    print("  Using default values instead")
+    FMIN = 0
+    FMAX = 22050
+    FFT_WIN = 0.03
+    FFT_HOP = 0.00375
+
+#P_DIR = str(Path(os.getcwd()).parents[0])  
+#DF_PATH = os.path.join(os.path.sep, P_DIR, 'data', 'df_umap.pkl')
+
+DF_PATH = os.path.join(P_DIR, 'data', 'df_umap.pkl')
+
+##########
+print("\nStep 3: Checking file paths...")
+print(f"Looking for file at: {DF_PATH}")
+print(f"File exists: {os.path.exists(DF_PATH)}")
+
+# Check if the data directory exists
+data_dir = os.path.join(P_DIR, 'data')
+print(f"Data directory exists: {os.path.exists(data_dir)}")
+
+# If directory exists, list its contents
+if os.path.exists(data_dir):
+    print(f"Files in data directory: {os.listdir(data_dir)}")
+###########
 
 LABEL_COL = 'label' # column with label identifier
 NA_INDICATOR = "unknown" #
@@ -44,13 +83,17 @@ distinct_colors_20 = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
                        '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', 
                        '#ffffff', '#000000']  
 
+print("\nStep 4: Loading dataframe...")
 # Load dataframe
 df = pd.read_pickle(DF_PATH)
+print(f"✓ Loaded {len(df)} samples")
 
 # labels
 labels = df[LABEL_COL]
+print(f"✓ Loaded labels: {len(labels.unique())} unique labels")
 
-df.columns
+print("\nDataframe columns:")
+print(df.columns)
 
 #Output should look like this:
 #Index(['filename', 'label', 'indv', 'ori_label', 'raw_audio', 'samplerate_hz',
@@ -62,20 +105,28 @@ df.columns
 #################################
 #1. Visualization
 
+print("\n" + "="*70)
+print("SECTION 1: Visualization")
+print("="*70)
+
 #Visualize the latent space representations, colored by available labels (or other variable)
 
 #1.1. 2D Plot
+print("\nGenerating 2D UMAP plot...")
 
 umap_2Dplot(x=df['UMAP1'],              # xaxis coordinates
             y=df['UMAP2'],              # yaxis coordinates
             scat_labels=labels,         # labels (if available)
             mycolors=distinct_colors_20, # sns.Palette color scheme name or list of colors
             outname=None,               # filename (with path) where figure will be saved. Default: None -> figure not saved
-      showlegend=True)           # show legend if True else no legend
+            showlegend=True)           # show legend if True else no legend
+
+print("✓ 2D plot displayed")
 
 #Output should be a color coded 2D map
 
 #1.2. 3D Plot
+print("\nGenerating 3D UMAP plot...")
 
 umap_3Dplot(x=df['UMAP1'],              # xaxis coordinates
             y=df['UMAP2'],              # yaxis coordinates
@@ -85,21 +136,28 @@ umap_3Dplot(x=df['UMAP1'],              # xaxis coordinates
             outname=None,               # filename (with path) where figure will be saved. Default: None -> figure not saved
             showlegend=True)           # show legend if True else no legend
 
+print("✓ 3D plot displayed")
+
 #Output should be a color coded 3D graph
 
 #############################################
 #2. Nearest neighbor evaluation of embedding
+
+print("\n" + "="*70)
+print("SECTION 2: Nearest Neighbor Evaluation")
+print("="*70)
 
 #Evaluate the embedding based on calltype labels of nearest neighbors.
 
 #2.1. Remove unlabelled datapoints
 #Any unlabelled calls can be ignored for these evaluations, so remove these from the dataset
 
+print("\nRemoving unlabelled datapoints...")
 labelled_df = df.loc[df[LABEL_COL]!=NA_INDICATOR,:] # create dataframe with only the labelled datapoints
+print(f"✓ Kept {len(labelled_df)} labelled samples (removed {len(df)-len(labelled_df)} unknown)")
 
 UMAP_COLS = [x for x in labelled_df.columns if 'UMAP' in x]   # detects UMAP columns
 print("Found", len(UMAP_COLS), "UMAP columns in df, using all ",len(UMAP_COLS)," for subsequent analyses.")
-
 
 labels = labelled_df[LABEL_COL]                # manual labels
 embedding = np.asarray(labelled_df[UMAP_COLS]) # UMAP coordinates
@@ -109,6 +167,7 @@ embedding = np.asarray(labelled_df[UMAP_COLS]) # UMAP coordinates
 #2.2. Calculate nearest neighbor statistics
 #To evaluate how well call types are grouped in latent space, we assess the class (e.g. manual call type label) of the knn=5 nearest neighbors of each datapoint in the latent space.
 
+print("\nCalculating nearest neighbor statistics...")
 
 knn=5 #  for knn=5 nearest neighbors
 
@@ -123,16 +182,20 @@ print("Evaluation score Snorm (unweighted average of normalized same-class proba
 
 #2.3. Plot nearest neighbor metrics
 
+print("\nGenerating nearest neighbor heatmaps...")
+
 #2.3.1. Absolute score
 #In this evaluation matrix, each field M[i,j] is the probability P (in percentage) for datapoints of label i to have a neighbor with label j in the latent space (based on the observed frequencies of certain labels among the knn nearest neighbors). For ease of interpretation, we add a row for the overall probability of encountering a neighbor with label j in the dataset (= the frequency of j in the dataset).
 #Same-class probability is on the diagnoal.
 
+print("  Plotting absolute scores...")
 nn_stats.plot_heat_S(vmin=0,       # lower end (for color scheme)
                      vmax=100,     # upper end (for color scheme)
                      center=50,    # center(for color scheme)
                      cmap=sns.color_palette("Greens", as_cmap=True),# color scheme 
                      cbar=None,    # show colorbar if True else don't
                      outname=None) # filename (with path) where figure will be saved. Default: None -> figure not saved
+plt.show()
 
 #Reference Github for ex. output
 
@@ -140,27 +203,37 @@ nn_stats.plot_heat_S(vmin=0,       # lower end (for color scheme)
 #Since these absolute neighborhood frequencies are not normalized to class imbalances (e.g. a heavily overrepresented class is more likely to have higher neighborhood frequencies by chance alone), we normalized this probability of encountering same-class datapoints among the k=5 nearest neighbors to the overall probability of encountering same-class datapoints to account for the varying call type frequencies in the dataset. This score can be interpreted as the fold increase in likelihood of same-class neighbors over the random chance expectation:
 #(-> 2 means that observed frequency is twice as much as expected by random chance, 0.5 means that neighborhood label was observed half as often as expected by random chance)
 
+print("  Plotting normalized scores...")
 nn_stats.plot_heat_fold(center=1,    # center(for color scheme)
                         cmap=sns.diverging_palette(20, 145, as_cmap=True),# color scheme 
                         cbar=None,    # show colorbar if True else don't
                         outname=None) # filename (with path) where figure will be saved. Default: None -> figure not saved
+plt.show()
 
 #2.3.3. Normalized, log-transformed score
 #We then applied a log2 transformation, such that the score is symmetric around zero and can be interpreted as the fold in- or decrease (positive or negative values, respectively) in likelihood over the random chance expectation:
 #(--> e.g. 2 is twice as much as random chance expectation, -2 is half as much as random chance expection)
 
+print("  Plotting log-transformed scores...")
 nn_stats.plot_heat_Snorm(vmin=-13,     # lower end (for color scheme)
                          vmax=13,      # upper end (for color scheme)
                          center=1,     # center(for color scheme)
                          cmap=sns.diverging_palette(20, 145, as_cmap=True),# color scheme 
                          cbar=None,    # show colorbar if True else don't
                          outname=None) # filename (with path) where figure will be saved. Default: None -> figure not saved
+plt.show()
 
+print("✓ All heatmaps displayed")
 
 #################################
 #3. Evaluation based on pairwise distances
-#Since nearest neighbor metrics only capture one aspect of class separation in space, we recommend evaluating other aspects of class separation, such as the overall distances within a call type group (“between”) vs. towards calls of a different type (“outside”). Hence, we calculated all pairwise distances within datapoints of the same calltype x, ("within") vs. all pairwise distances of datapoints of calltype x towards datapoints of all other calltypes ("between") and plot their distribution.
+#Since nearest neighbor metrics only capture one aspect of class separation in space, we recommend evaluating other aspects of class separation, such as the overall distances within a call type group ("between") vs. towards calls of a different type ("outside"). Hence, we calculated all pairwise distances within datapoints of the same calltype x, ("within") vs. all pairwise distances of datapoints of calltype x towards datapoints of all other calltypes ("between") and plot their distribution.
 
+print("\n" + "="*70)
+print("SECTION 3: Pairwise Distance Evaluation")
+print("="*70)
+
+print("\nCalculating within/between distances...")
 plot_within_without(embedding=embedding,         # latent space coordinates (2D numpy array)
                     labels=labels,               # calltype labels
                     distance_metric='euclidean', # distance metric (all scipy distance metrics are valid)
@@ -171,35 +244,52 @@ plot_within_without(embedding=embedding,         # latent space coordinates (2D 
                     nrows=4,                     # number of rows of subplots
                     ncols=2,                     # number of cols of subplots
                     density=True)                # plot density if True else plot frequency
+plt.show()
+
+print("✓ Distance plots displayed")
 
 #--> The more separated the two distributions, the closer the datapoints of the calltype are clustered together and at the same time are far away from other clusters/datapoints
 
 ###############################
 #4. Silhouette Plot
 
+print("\n" + "="*70)
+print("SECTION 4: Silhouette Analysis")
+print("="*70)
+
 #As a means to quantify the global clustering by call type, we calculated the Silhouette values of the manual label clusters in UMAP space and plotted the scores for all datapoints, sorted by call type group. Silhouette value indicates how close datapoints are to their own cluster compared to other clusters and is defined as:
 # sil(x) = (b-a)max(a,b)
 #with a being the mean intra-cluster distance in the cluster of datapoint x and b the mean distance between x and the nearest neighboring cluster. Positive scores thus indicate that this datapoint is nearby elements of the same cluster, whereas negative scores indicate that this datapoint is actually closer to elements of another cluster.
 
+print("\nCalculating silhouette scores...")
 sil_stats = sil(embedding, labels)
 sil_stats.plot_sil(outname=None) # filename (with path) where figure will be saved. Default: None -> figure not saved
+plt.show()
+
+print("✓ Silhouette plot displayed")
 
 #You should get a color coded silhouette plot (silhoueutte value x cluster label)
 
-sil_stats.get_avrg_score()
+avg_score = sil_stats.get_avrg_score()
+print(f"Average silhouette score: {avg_score}")
 
 #Ex. output: 0.2036079
 
 ################################
 #5. Visualize example nearest neighbors
 
-#To assess whether a call’s nearest neighbors are indeed similar calls, we recommend to randomly select datapoints from the dataset along with their k nearest neighbors, display the spectrograms and visually assess their similarity.
+print("\n" + "="*70)
+print("SECTION 5: Example Nearest Neighbors")
+print("="*70)
+
+#To assess whether a call's nearest neighbors are indeed similar calls, we recommend to randomly select datapoints from the dataset along with their k nearest neighbors, display the spectrograms and visually assess their similarity.
 
 DISPLAY_COL = 'spectrograms'  # which spectrograms to display
                               # could also choose denoised_spectrograms or other
 
 knn=5
 
+print("\nFinding nearest neighbors...")
 # Find k nearest neighbors
 nbrs = NearestNeighbors(metric='euclidean',n_neighbors=knn+1, algorithm='brute').fit(embedding)
 distances, indices = nbrs.kneighbors(embedding)
@@ -207,12 +297,15 @@ distances, indices = nbrs.kneighbors(embedding)
 # need to remove the first neighbor, because that is the datapoint itself
 indices = indices[:,1:]  
 distances = distances[:,1:]
+print("✓ Nearest neighbors computed")
 
 #5.1. Using librosa.display
 #The first image in each row is a randomly selected call. The subsequent 5 call are its nearest neighbors in latent space. Note that with librosa, all images will have the same size, even though they differ in duration (-> aspect ratio can only be set in future versions of librosa.)
 
 # Randomly choose 10 calls and plot their 4 nearest neighbors
 # using LIBROSA.DISPLAY
+
+print("\nGenerating spectrogram grid with librosa...")
 
 n_examples = 8
 fig = plt.figure(figsize=(20,20))
@@ -221,7 +314,6 @@ k=1
 # randomly choose
 random.seed(1)
 example_indices = random.sample(list(range(embedding.shape[0])), n_examples)
-
 
 for i,ind in enumerate(example_indices):
     
@@ -248,6 +340,9 @@ for i,ind in enumerate(example_indices):
     
         k=k+1
 plt.tight_layout()
+plt.show()
+
+print("✓ Librosa spectrogram grid displayed")
 
 #Watch out for this warning:
 #/home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'basey' parameter of __init__() has been renamed 'base' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
@@ -262,6 +357,8 @@ plt.tight_layout()
 
 # Randomly choose 10 calls and plot their 4 nearest neighbors
 # using PLT.IMSHOW
+
+print("\nGenerating spectrogram grid with imshow...")
 
 n_examples = 8
 major_tick_interval = 20
@@ -337,16 +434,35 @@ for i,ind in enumerate(example_indices):
       
         k=k+1
 
+plt.tight_layout()
+plt.show()
+
+print("✓ Imshow spectrogram grid displayed")
+
 ###You should get an array of audio spectrogram sections
 
 ###################################################################
 #EXTRA: Example Application: Graph from embedding evaluation
 
-#To visualize the degree to which different call types are found in close vicinity of each other, we constructed a neighborhood graph where nodes represent call types and edges represent the frequency of the call types’ neighborhood in latent space. In more detail, we transform the evaluation matrix of the normalized k nearest neighbor probabilities (Pnorm) of the UMAP embedding into a symmetric distance matrix, replace each field with the average of itself and its diagonal counterpart (M[i,j] = mean(M[i,j], M[j,i] and then M[j,i] = M[i,j]), multiply the matrix by -1 and set the diagonal to zero. We then generate an approximation of a graph where edge length represents the distance values from the matrix using network and pygraphviz.
+print("\n" + "="*70)
+print("EXTRA: Similarity Graph")
+print("="*70)
 
-G = nn_stats.draw_simgraph(outname = None) # filename (with path) where figure will be saved. Default: None -> figure not saved
+#To visualize the degree to which different call types are found in close vicinity of each other, we constructed a neighborhood graph where nodes represent call types and edges represent the frequency of the call types' neighborhood in latent space. In more detail, we transform the evaluation matrix of the normalized k nearest neighbor probabilities (Pnorm) of the UMAP embedding into a symmetric distance matrix, replace each field with the average of itself and its diagonal counterpart (M[i,j] = mean(M[i,j], M[j,i] and then M[j,i] = M[i,j]), multiply the matrix by -1 and set the diagonal to zero. We then generate an approximation of a graph where edge length represents the distance values from the matrix using network and pygraphviz.
 
-# show graph inline:
-Image(G.draw(format='png',prog='neato'), width=400, height=600)
+print("\nGenerating similarity graph...")
+try:
+    G = nn_stats.draw_simgraph(outname = None) # filename (with path) where figure will be saved. Default: None -> figure not saved
+
+    # show graph inline:
+    display(Image(G.draw(format='png',prog='neato'), width=400, height=600))
+    print("✓ Graph displayed")
+except Exception as e:
+    print(f"⚠️ Could not generate graph: {e}")
+    print("  (pygraphviz may not be installed)")
 
 #Ex. output can be found in Github
+
+print("\n" + "="*70)
+print("✓✓✓ UMAP EVALUATION COMPLETE! ✓✓✓")
+print("="*70)
