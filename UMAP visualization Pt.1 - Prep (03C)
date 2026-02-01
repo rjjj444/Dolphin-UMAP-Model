@@ -1,6 +1,15 @@
-#UMAP visualization Part 1 (prep)
+# UMAP visualization Part 1 (prep)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP VISUALIZATION PART 1 (PREP)")
+print("="*70)
 
 #Import statements, constants and functions
+
+print("\nStep 1: Importing libraries...")
 
 import pandas as pd
 import numpy as np
@@ -14,41 +23,78 @@ import librosa
 import librosa.display
 import umap
 
-import sys 
+import sys
 sys.path.insert(0, '..')
 
-P_DIR = str(Path(os.getcwd()).parents[0])  
-DATA = os.path.join(os.path.sep, P_DIR, 'data') 
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up paths and parameters...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
 DF_NAME = 'df_umap.pkl'
 
 SPEC_COL = 'spectrograms' # column name that contains the spectrograms
 ID_COL = 'callID' # column name that contains call identifier (must be unique)
 
+OVERWRITE = False # If there already exists an image_data.pkl, should it be overwritten? Default no
 
-OVERWRITE = False  # If there already exists an image_data.pkl, should it be overwritten? Default no
+print(f"✓ Project directory: {P_DIR}")
+print(f"✓ Data directory: {DATA}")
+print(f"✓ Spectrogram column: {SPEC_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Overwrite mode: {OVERWRITE}")
 
 # Spectrogramming parameters (needed for generating the images)
 
-from parameters.spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+print("\nStep 3: Loading spectrogram parameters...")
+sys.path.insert(0, os.path.join(P_DIR, 'parameters'))
+
+try:
+    from spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+    print(f"✓ Loaded parameters: FMIN={FMIN}, FMAX={FMAX}, FFT_WIN={FFT_WIN}, FFT_HOP={FFT_HOP}")
+except ImportError as e:
+    print(f"⚠️ Could not import parameters: {e}")
+    print("  Using default values instead")
+    FFT_WIN = 0.03
+    FFT_HOP = 0.00375
+    FMIN = 0
+    FMAX = 22050
 
 # Make sure the spectrogramming parameters are correct!
-# They are used to set the correct time and frequency axis labels for the spectrogram images. 
+# They are used to set the correct time and frequency axis labels for the spectrogram images.
 
 # If you are using bandpass-filtered spectrograms...
 if 'filtered' in SPEC_COL:
+    print("  Detected filtered spectrograms, loading additional parameters...")
     # ...FMIN is set to LOWCUT, FMAX to HIGHCUT and N_MELS to N_MELS_FILTERED
-    from parameters.spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
-    
-    FMIN = LOWCUT
-    FMAX = HIGHCUT
-    N_MELS = N_MELS_FILTERED
+    try:
+        from spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
+        FMIN = LOWCUT
+        FMAX = HIGHCUT
+        N_MELS = N_MELS_FILTERED
+        print(f"  ✓ Updated: FMIN={FMIN}, FMAX={FMAX}, N_MELS={N_MELS}")
+    except ImportError:
+        print("  ⚠️ Could not load filtered parameters")
 
 #######################################
 #1. Read in files
 
-df = pd.read_pickle(os.path.join(os.path.sep, DATA, DF_NAME))
+print("\n" + "="*70)
+print("SECTION 1: Loading Data")
+print("="*70)
+
+df_path = os.path.join(DATA, DF_NAME)
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
 
 #1.1. Check if call identifier column is present
+
+print(f"\nChecking for ID column '{ID_COL}'...")
 
 # Default callID will be the name of the wav file
 
@@ -58,8 +104,12 @@ if ID_COL not in df.columns:
     if 'filename' in df.columns:
         print("Default ID column ", ID_COL, "will be generated from filename.")
         df[ID_COL] = [x.split(".")[0] for x in df['filename']]
+        print(f"✓ Generated {len(df[ID_COL])} IDs from filenames")
     else:
-        raise
+        print("✗ ERROR: No filename column found to generate IDs!")
+        raise ValueError("Cannot generate ID column - no filename column found")
+else:
+    print(f"✓ ID column '{ID_COL}' found with {len(df[ID_COL].unique())} unique IDs")
 
 #Ex. output: No ID-Column found ( callID )
 #             Default ID column  callID will be generated from filename.
@@ -67,39 +117,66 @@ if ID_COL not in df.columns:
 ###########################################
 #2. Generate spectrogram images
 
+print("\n" + "="*70)
+print("SECTION 2: Generating Spectrogram Images")
+print("="*70)
+
 #A spectrogram image is generated from each row in the dataframe. Images are saved in a dictionary (keys are the ID_COL of the dataframe).
 #The dictionary is pickled and saved as image_data.pkl. It will later be loaded in the interactive visualization script and these images will be displayed in the visualization.
 
-if OVERWRITE==False and os.path.isfile(os.path.join(os.path.sep,DATA,'image_data.pkl')):
+image_data_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nChecking for existing image_data.pkl at: {image_data_path}")
+
+if OVERWRITE==False and os.path.isfile(image_data_path):
     print("File already exists. Overwrite is set to FALSE, so no new image_data will be generated.")
     
-    # Double-ceck if image_data contains all the required calls
-    with open(os.path.join(os.path.sep, DATA, 'image_data.pkl'), 'rb') as handle:
-        image_data = pickle.load(handle)  
+    # Double-check if image_data contains all the required calls
+    print("Verifying existing image_data contains all required calls...")
+    with open(image_data_path, 'rb') as handle:
+        image_data = pickle.load(handle)
     image_keys = list(image_data.keys())
     expected_keys = list(df[ID_COL])
     missing = list(set(expected_keys)-set(image_keys))
     
     if len(missing)>0:
-        print("BUT: The current image_data.pkl file doesn't seem to contain all calls that are in your dataframe!")
+        print(f"⚠️ WARNING: The current image_data.pkl file doesn't contain all calls!")
+        print(f"  Missing {len(missing)} calls from your dataframe")
+        print(f"  Set OVERWRITE=True to regenerate all images")
+    else:
+        print(f"✓ Existing image_data.pkl contains all {len(expected_keys)} required calls")
         
 else:
+    if OVERWRITE:
+        print("Overwrite is set to TRUE - regenerating all images...")
+    else:
+        print("No existing image_data.pkl found - generating new images...")
+    
+    print(f"\nGenerating {len(df)} spectrogram images...")
+    print("This may take several minutes...")
+    
     image_data = {}
     for i,dat in enumerate(df.spectrograms):
-        print('\rProcessing i:',i,'/',df.shape[0], end='')
-        dat = np.asarray(df.iloc[i][SPEC_COL]) 
+        if i % 100 == 0:  # Progress update every 100 images
+            print(f'\rProcessing: {i}/{df.shape[0]} ({100*i/df.shape[0]:.1f}%)', end='')
+        
+        dat = np.asarray(df.iloc[i][SPEC_COL])
         sr = df.iloc[i]['samplerate_hz']
         plt.figure()
-        librosa.display.specshow(dat,sr=sr, hop_length=int(FFT_HOP * sr) , fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s',cmap='inferno')
+        librosa.display.specshow(dat, sr=sr, hop_length=int(FFT_HOP * sr),
+                                fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s', cmap='inferno')
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
         byte_im = buf.getvalue()
         image_data[df.iloc[i][ID_COL]] = byte_im
         plt.close()
-
+    
+    print(f'\r✓ Completed: {df.shape[0]}/{df.shape[0]} (100.0%)')
+    
     # Store data (serialize)
-    with open(os.path.join(os.path.sep,DATA,'image_data.pkl'), 'wb') as handle:
+    print(f"\nSaving image_data.pkl to: {image_data_path}")
+    with open(image_data_path, 'wb') as handle:
         pickle.dump(image_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"✓ Saved {len(image_data)} spectrogram images")
 
 #Ex. output: Processing i: 0 / 6428
 #            Processing i: 1 / 6428
@@ -116,6 +193,1299 @@ else:
 ######################################
 #3. Save dataframe
 
+print("\n" + "="*70)
+print("SECTION 3: Saving Dataframe")
+print("="*70)
+
 #Save the dataframe to make sure it contains the correct ID column for access to the image_data.
 
-df.to_pickle(os.path.join(os.path.sep, DATA, DF_NAME))
+df_save_path = os.path.join(DATA, DF_NAME)
+print(f"\nSaving dataframe to: {df_save_path}")
+df.to_pickle(df_save_path)
+print(f"✓ Dataframe saved with {len(df)} samples and {len(df.columns)} columns")
+
+print("\n" + "="*70)
+print("✓✓✓ VISUALIZATION PREP COMPLETE! ✓✓✓")
+print("="*70)
+print(f"\nGenerated files:")
+print(f"  - {image_data_path}")
+print(f"  - {df_save_path}")
+print(f"\nReady for interactive visualization!")
+# UMAP visualization Part 1 (prep)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP VISUALIZATION PART 1 (PREP)")
+print("="*70)
+
+#Import statements, constants and functions
+
+print("\nStep 1: Importing libraries...")
+
+import pandas as pd
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+import soundfile as sf
+import io
+import librosa
+import librosa.display
+import umap
+
+import sys
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up paths and parameters...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+DF_NAME = 'df_umap.pkl'
+
+SPEC_COL = 'spectrograms' # column name that contains the spectrograms
+ID_COL = 'callID' # column name that contains call identifier (must be unique)
+
+OVERWRITE = False # If there already exists an image_data.pkl, should it be overwritten? Default no
+
+print(f"✓ Project directory: {P_DIR}")
+print(f"✓ Data directory: {DATA}")
+print(f"✓ Spectrogram column: {SPEC_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Overwrite mode: {OVERWRITE}")
+
+# Spectrogramming parameters (needed for generating the images)
+
+print("\nStep 3: Loading spectrogram parameters...")
+sys.path.insert(0, os.path.join(P_DIR, 'parameters'))
+
+try:
+    from spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+    print(f"✓ Loaded parameters: FMIN={FMIN}, FMAX={FMAX}, FFT_WIN={FFT_WIN}, FFT_HOP={FFT_HOP}")
+except ImportError as e:
+    print(f"⚠️ Could not import parameters: {e}")
+    print("  Using default values instead")
+    FFT_WIN = 0.03
+    FFT_HOP = 0.00375
+    FMIN = 0
+    FMAX = 22050
+
+# Make sure the spectrogramming parameters are correct!
+# They are used to set the correct time and frequency axis labels for the spectrogram images.
+
+# If you are using bandpass-filtered spectrograms...
+if 'filtered' in SPEC_COL:
+    print("  Detected filtered spectrograms, loading additional parameters...")
+    # ...FMIN is set to LOWCUT, FMAX to HIGHCUT and N_MELS to N_MELS_FILTERED
+    try:
+        from spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
+        FMIN = LOWCUT
+        FMAX = HIGHCUT
+        N_MELS = N_MELS_FILTERED
+        print(f"  ✓ Updated: FMIN={FMIN}, FMAX={FMAX}, N_MELS={N_MELS}")
+    except ImportError:
+        print("  ⚠️ Could not load filtered parameters")
+
+#######################################
+#1. Read in files
+
+print("\n" + "="*70)
+print("SECTION 1: Loading Data")
+print("="*70)
+
+df_path = os.path.join(DATA, DF_NAME)
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+#1.1. Check if call identifier column is present
+
+print(f"\nChecking for ID column '{ID_COL}'...")
+
+# Default callID will be the name of the wav file
+
+if ID_COL not in df.columns:
+    print('No ID-Column found (', ID_COL, ')')
+    
+    if 'filename' in df.columns:
+        print("Default ID column ", ID_COL, "will be generated from filename.")
+        df[ID_COL] = [x.split(".")[0] for x in df['filename']]
+        print(f"✓ Generated {len(df[ID_COL])} IDs from filenames")
+    else:
+        print("✗ ERROR: No filename column found to generate IDs!")
+        raise ValueError("Cannot generate ID column - no filename column found")
+else:
+    print(f"✓ ID column '{ID_COL}' found with {len(df[ID_COL].unique())} unique IDs")
+
+#Ex. output: No ID-Column found ( callID )
+#             Default ID column  callID will be generated from filename.
+
+###########################################
+#2. Generate spectrogram images
+
+print("\n" + "="*70)
+print("SECTION 2: Generating Spectrogram Images")
+print("="*70)
+
+#A spectrogram image is generated from each row in the dataframe. Images are saved in a dictionary (keys are the ID_COL of the dataframe).
+#The dictionary is pickled and saved as image_data.pkl. It will later be loaded in the interactive visualization script and these images will be displayed in the visualization.
+
+image_data_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nChecking for existing image_data.pkl at: {image_data_path}")
+
+if OVERWRITE==False and os.path.isfile(image_data_path):
+    print("File already exists. Overwrite is set to FALSE, so no new image_data will be generated.")
+    
+    # Double-check if image_data contains all the required calls
+    print("Verifying existing image_data contains all required calls...")
+    with open(image_data_path, 'rb') as handle:
+        image_data = pickle.load(handle)
+    image_keys = list(image_data.keys())
+    expected_keys = list(df[ID_COL])
+    missing = list(set(expected_keys)-set(image_keys))
+    
+    if len(missing)>0:
+        print(f"⚠️ WARNING: The current image_data.pkl file doesn't contain all calls!")
+        print(f"  Missing {len(missing)} calls from your dataframe")
+        print(f"  Set OVERWRITE=True to regenerate all images")
+    else:
+        print(f"✓ Existing image_data.pkl contains all {len(expected_keys)} required calls")
+        
+else:
+    if OVERWRITE:
+        print("Overwrite is set to TRUE - regenerating all images...")
+    else:
+        print("No existing image_data.pkl found - generating new images...")
+    
+    print(f"\nGenerating {len(df)} spectrogram images...")
+    print("This may take several minutes...")
+    
+    image_data = {}
+    for i,dat in enumerate(df.spectrograms):
+        if i % 100 == 0:  # Progress update every 100 images
+            print(f'\rProcessing: {i}/{df.shape[0]} ({100*i/df.shape[0]:.1f}%)', end='')
+        
+        dat = np.asarray(df.iloc[i][SPEC_COL])
+        sr = df.iloc[i]['samplerate_hz']
+        plt.figure()
+        librosa.display.specshow(dat, sr=sr, hop_length=int(FFT_HOP * sr),
+                                fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s', cmap='inferno')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        byte_im = buf.getvalue()
+        image_data[df.iloc[i][ID_COL]] = byte_im
+        plt.close()
+    
+    print(f'\r✓ Completed: {df.shape[0]}/{df.shape[0]} (100.0%)')
+    
+    # Store data (serialize)
+    print(f"\nSaving image_data.pkl to: {image_data_path}")
+    with open(image_data_path, 'wb') as handle:
+        pickle.dump(image_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"✓ Saved {len(image_data)} spectrogram images")
+
+#Ex. output: Processing i: 0 / 6428
+#            Processing i: 1 / 6428
+#            Processing i: 2 / 6428
+#            Processing i: 3 / 6428
+
+#Watch out for this warning: /home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'basey' parameter of __init__() has been renamed 'base' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+#/home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'linthreshy' parameter of __init__() has been renamed 'linthresh' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+
+#output goes to: Processing i: 6427 / 6428 / 6428
+
+######################################
+#3. Save dataframe
+
+print("\n" + "="*70)
+print("SECTION 3: Saving Dataframe")
+print("="*70)
+
+#Save the dataframe to make sure it contains the correct ID column for access to the image_data.
+
+df_save_path = os.path.join(DATA, DF_NAME)
+print(f"\nSaving dataframe to: {df_save_path}")
+df.to_pickle(df_save_path)
+print(f"✓ Dataframe saved with {len(df)} samples and {len(df.columns)} columns")
+
+print("\n" + "="*70)
+print("✓✓✓ VISUALIZATION PREP COMPLETE! ✓✓✓")
+print("="*70)
+print(f"\nGenerated files:")
+print(f"  - {image_data_path}")
+print(f"  - {df_save_path}")
+print(f"\nReady for interactive visualization!")
+# UMAP visualization Part 1 (prep)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP VISUALIZATION PART 1 (PREP)")
+print("="*70)
+
+#Import statements, constants and functions
+
+print("\nStep 1: Importing libraries...")
+
+import pandas as pd
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+import soundfile as sf
+import io
+import librosa
+import librosa.display
+import umap
+
+import sys
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up paths and parameters...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+DF_NAME = 'df_umap.pkl'
+
+SPEC_COL = 'spectrograms' # column name that contains the spectrograms
+ID_COL = 'callID' # column name that contains call identifier (must be unique)
+
+OVERWRITE = False # If there already exists an image_data.pkl, should it be overwritten? Default no
+
+print(f"✓ Project directory: {P_DIR}")
+print(f"✓ Data directory: {DATA}")
+print(f"✓ Spectrogram column: {SPEC_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Overwrite mode: {OVERWRITE}")
+
+# Spectrogramming parameters (needed for generating the images)
+
+print("\nStep 3: Loading spectrogram parameters...")
+sys.path.insert(0, os.path.join(P_DIR, 'parameters'))
+
+try:
+    from spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+    print(f"✓ Loaded parameters: FMIN={FMIN}, FMAX={FMAX}, FFT_WIN={FFT_WIN}, FFT_HOP={FFT_HOP}")
+except ImportError as e:
+    print(f"⚠️ Could not import parameters: {e}")
+    print("  Using default values instead")
+    FFT_WIN = 0.03
+    FFT_HOP = 0.00375
+    FMIN = 0
+    FMAX = 22050
+
+# Make sure the spectrogramming parameters are correct!
+# They are used to set the correct time and frequency axis labels for the spectrogram images.
+
+# If you are using bandpass-filtered spectrograms...
+if 'filtered' in SPEC_COL:
+    print("  Detected filtered spectrograms, loading additional parameters...")
+    # ...FMIN is set to LOWCUT, FMAX to HIGHCUT and N_MELS to N_MELS_FILTERED
+    try:
+        from spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
+        FMIN = LOWCUT
+        FMAX = HIGHCUT
+        N_MELS = N_MELS_FILTERED
+        print(f"  ✓ Updated: FMIN={FMIN}, FMAX={FMAX}, N_MELS={N_MELS}")
+    except ImportError:
+        print("  ⚠️ Could not load filtered parameters")
+
+#######################################
+#1. Read in files
+
+print("\n" + "="*70)
+print("SECTION 1: Loading Data")
+print("="*70)
+
+df_path = os.path.join(DATA, DF_NAME)
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+#1.1. Check if call identifier column is present
+
+print(f"\nChecking for ID column '{ID_COL}'...")
+
+# Default callID will be the name of the wav file
+
+if ID_COL not in df.columns:
+    print('No ID-Column found (', ID_COL, ')')
+    
+    if 'filename' in df.columns:
+        print("Default ID column ", ID_COL, "will be generated from filename.")
+        df[ID_COL] = [x.split(".")[0] for x in df['filename']]
+        print(f"✓ Generated {len(df[ID_COL])} IDs from filenames")
+    else:
+        print("✗ ERROR: No filename column found to generate IDs!")
+        raise ValueError("Cannot generate ID column - no filename column found")
+else:
+    print(f"✓ ID column '{ID_COL}' found with {len(df[ID_COL].unique())} unique IDs")
+
+#Ex. output: No ID-Column found ( callID )
+#             Default ID column  callID will be generated from filename.
+
+###########################################
+#2. Generate spectrogram images
+
+print("\n" + "="*70)
+print("SECTION 2: Generating Spectrogram Images")
+print("="*70)
+
+#A spectrogram image is generated from each row in the dataframe. Images are saved in a dictionary (keys are the ID_COL of the dataframe).
+#The dictionary is pickled and saved as image_data.pkl. It will later be loaded in the interactive visualization script and these images will be displayed in the visualization.
+
+image_data_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nChecking for existing image_data.pkl at: {image_data_path}")
+
+if OVERWRITE==False and os.path.isfile(image_data_path):
+    print("File already exists. Overwrite is set to FALSE, so no new image_data will be generated.")
+    
+    # Double-check if image_data contains all the required calls
+    print("Verifying existing image_data contains all required calls...")
+    with open(image_data_path, 'rb') as handle:
+        image_data = pickle.load(handle)
+    image_keys = list(image_data.keys())
+    expected_keys = list(df[ID_COL])
+    missing = list(set(expected_keys)-set(image_keys))
+    
+    if len(missing)>0:
+        print(f"⚠️ WARNING: The current image_data.pkl file doesn't contain all calls!")
+        print(f"  Missing {len(missing)} calls from your dataframe")
+        print(f"  Set OVERWRITE=True to regenerate all images")
+    else:
+        print(f"✓ Existing image_data.pkl contains all {len(expected_keys)} required calls")
+        
+else:
+    if OVERWRITE:
+        print("Overwrite is set to TRUE - regenerating all images...")
+    else:
+        print("No existing image_data.pkl found - generating new images...")
+    
+    print(f"\nGenerating {len(df)} spectrogram images...")
+    print("This may take several minutes...")
+    
+    image_data = {}
+    for i,dat in enumerate(df.spectrograms):
+        if i % 100 == 0:  # Progress update every 100 images
+            print(f'\rProcessing: {i}/{df.shape[0]} ({100*i/df.shape[0]:.1f}%)', end='')
+        
+        dat = np.asarray(df.iloc[i][SPEC_COL])
+        sr = df.iloc[i]['samplerate_hz']
+        plt.figure()
+        librosa.display.specshow(dat, sr=sr, hop_length=int(FFT_HOP * sr),
+                                fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s', cmap='inferno')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        byte_im = buf.getvalue()
+        image_data[df.iloc[i][ID_COL]] = byte_im
+        plt.close()
+    
+    print(f'\r✓ Completed: {df.shape[0]}/{df.shape[0]} (100.0%)')
+    
+    # Store data (serialize)
+    print(f"\nSaving image_data.pkl to: {image_data_path}")
+    with open(image_data_path, 'wb') as handle:
+        pickle.dump(image_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"✓ Saved {len(image_data)} spectrogram images")
+
+#Ex. output: Processing i: 0 / 6428
+#            Processing i: 1 / 6428
+#            Processing i: 2 / 6428
+#            Processing i: 3 / 6428
+
+#Watch out for this warning: /home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'basey' parameter of __init__() has been renamed 'base' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+#/home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'linthreshy' parameter of __init__() has been renamed 'linthresh' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+
+#output goes to: Processing i: 6427 / 6428 / 6428
+
+######################################
+#3. Save dataframe
+
+print("\n" + "="*70)
+print("SECTION 3: Saving Dataframe")
+print("="*70)
+
+#Save the dataframe to make sure it contains the correct ID column for access to the image_data.
+
+df_save_path = os.path.join(DATA, DF_NAME)
+print(f"\nSaving dataframe to: {df_save_path}")
+df.to_pickle(df_save_path)
+print(f"✓ Dataframe saved with {len(df)} samples and {len(df.columns)} columns")
+
+print("\n" + "="*70)
+print("✓✓✓ VISUALIZATION PREP COMPLETE! ✓✓✓")
+print("="*70)
+print(f"\nGenerated files:")
+print(f"  - {image_data_path}")
+print(f"  - {df_save_path}")
+print(f"\nReady for interactive visualization!")
+# UMAP visualization Part 1 (prep)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP VISUALIZATION PART 1 (PREP)")
+print("="*70)
+
+#Import statements, constants and functions
+
+print("\nStep 1: Importing libraries...")
+
+import pandas as pd
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+import soundfile as sf
+import io
+import librosa
+import librosa.display
+import umap
+
+import sys
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up paths and parameters...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+DF_NAME = 'df_umap.pkl'
+
+SPEC_COL = 'spectrograms' # column name that contains the spectrograms
+ID_COL = 'callID' # column name that contains call identifier (must be unique)
+
+OVERWRITE = False # If there already exists an image_data.pkl, should it be overwritten? Default no
+
+print(f"✓ Project directory: {P_DIR}")
+print(f"✓ Data directory: {DATA}")
+print(f"✓ Spectrogram column: {SPEC_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Overwrite mode: {OVERWRITE}")
+
+# Spectrogramming parameters (needed for generating the images)
+
+print("\nStep 3: Loading spectrogram parameters...")
+sys.path.insert(0, os.path.join(P_DIR, 'parameters'))
+
+try:
+    from spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+    print(f"✓ Loaded parameters: FMIN={FMIN}, FMAX={FMAX}, FFT_WIN={FFT_WIN}, FFT_HOP={FFT_HOP}")
+except ImportError as e:
+    print(f"⚠️ Could not import parameters: {e}")
+    print("  Using default values instead")
+    FFT_WIN = 0.03
+    FFT_HOP = 0.00375
+    FMIN = 0
+    FMAX = 22050
+
+# Make sure the spectrogramming parameters are correct!
+# They are used to set the correct time and frequency axis labels for the spectrogram images.
+
+# If you are using bandpass-filtered spectrograms...
+if 'filtered' in SPEC_COL:
+    print("  Detected filtered spectrograms, loading additional parameters...")
+    # ...FMIN is set to LOWCUT, FMAX to HIGHCUT and N_MELS to N_MELS_FILTERED
+    try:
+        from spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
+        FMIN = LOWCUT
+        FMAX = HIGHCUT
+        N_MELS = N_MELS_FILTERED
+        print(f"  ✓ Updated: FMIN={FMIN}, FMAX={FMAX}, N_MELS={N_MELS}")
+    except ImportError:
+        print("  ⚠️ Could not load filtered parameters")
+
+#######################################
+#1. Read in files
+
+print("\n" + "="*70)
+print("SECTION 1: Loading Data")
+print("="*70)
+
+df_path = os.path.join(DATA, DF_NAME)
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+#1.1. Check if call identifier column is present
+
+print(f"\nChecking for ID column '{ID_COL}'...")
+
+# Default callID will be the name of the wav file
+
+if ID_COL not in df.columns:
+    print('No ID-Column found (', ID_COL, ')')
+    
+    if 'filename' in df.columns:
+        print("Default ID column ", ID_COL, "will be generated from filename.")
+        df[ID_COL] = [x.split(".")[0] for x in df['filename']]
+        print(f"✓ Generated {len(df[ID_COL])} IDs from filenames")
+    else:
+        print("✗ ERROR: No filename column found to generate IDs!")
+        raise ValueError("Cannot generate ID column - no filename column found")
+else:
+    print(f"✓ ID column '{ID_COL}' found with {len(df[ID_COL].unique())} unique IDs")
+
+#Ex. output: No ID-Column found ( callID )
+#             Default ID column  callID will be generated from filename.
+
+###########################################
+#2. Generate spectrogram images
+
+print("\n" + "="*70)
+print("SECTION 2: Generating Spectrogram Images")
+print("="*70)
+
+#A spectrogram image is generated from each row in the dataframe. Images are saved in a dictionary (keys are the ID_COL of the dataframe).
+#The dictionary is pickled and saved as image_data.pkl. It will later be loaded in the interactive visualization script and these images will be displayed in the visualization.
+
+image_data_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nChecking for existing image_data.pkl at: {image_data_path}")
+
+if OVERWRITE==False and os.path.isfile(image_data_path):
+    print("File already exists. Overwrite is set to FALSE, so no new image_data will be generated.")
+    
+    # Double-check if image_data contains all the required calls
+    print("Verifying existing image_data contains all required calls...")
+    with open(image_data_path, 'rb') as handle:
+        image_data = pickle.load(handle)
+    image_keys = list(image_data.keys())
+    expected_keys = list(df[ID_COL])
+    missing = list(set(expected_keys)-set(image_keys))
+    
+    if len(missing)>0:
+        print(f"⚠️ WARNING: The current image_data.pkl file doesn't contain all calls!")
+        print(f"  Missing {len(missing)} calls from your dataframe")
+        print(f"  Set OVERWRITE=True to regenerate all images")
+    else:
+        print(f"✓ Existing image_data.pkl contains all {len(expected_keys)} required calls")
+        
+else:
+    if OVERWRITE:
+        print("Overwrite is set to TRUE - regenerating all images...")
+    else:
+        print("No existing image_data.pkl found - generating new images...")
+    
+    print(f"\nGenerating {len(df)} spectrogram images...")
+    print("This may take several minutes...")
+    
+    image_data = {}
+    for i,dat in enumerate(df.spectrograms):
+        if i % 100 == 0:  # Progress update every 100 images
+            print(f'\rProcessing: {i}/{df.shape[0]} ({100*i/df.shape[0]:.1f}%)', end='')
+        
+        dat = np.asarray(df.iloc[i][SPEC_COL])
+        sr = df.iloc[i]['samplerate_hz']
+        plt.figure()
+        librosa.display.specshow(dat, sr=sr, hop_length=int(FFT_HOP * sr),
+                                fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s', cmap='inferno')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        byte_im = buf.getvalue()
+        image_data[df.iloc[i][ID_COL]] = byte_im
+        plt.close()
+    
+    print(f'\r✓ Completed: {df.shape[0]}/{df.shape[0]} (100.0%)')
+    
+    # Store data (serialize)
+    print(f"\nSaving image_data.pkl to: {image_data_path}")
+    with open(image_data_path, 'wb') as handle:
+        pickle.dump(image_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"✓ Saved {len(image_data)} spectrogram images")
+
+#Ex. output: Processing i: 0 / 6428
+#            Processing i: 1 / 6428
+#            Processing i: 2 / 6428
+#            Processing i: 3 / 6428
+
+#Watch out for this warning: /home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'basey' parameter of __init__() has been renamed 'base' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+#/home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'linthreshy' parameter of __init__() has been renamed 'linthresh' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+
+#output goes to: Processing i: 6427 / 6428 / 6428
+
+######################################
+#3. Save dataframe
+
+print("\n" + "="*70)
+print("SECTION 3: Saving Dataframe")
+print("="*70)
+
+#Save the dataframe to make sure it contains the correct ID column for access to the image_data.
+
+df_save_path = os.path.join(DATA, DF_NAME)
+print(f"\nSaving dataframe to: {df_save_path}")
+df.to_pickle(df_save_path)
+print(f"✓ Dataframe saved with {len(df)} samples and {len(df.columns)} columns")
+
+print("\n" + "="*70)
+print("✓✓✓ VISUALIZATION PREP COMPLETE! ✓✓✓")
+print("="*70)
+print(f"\nGenerated files:")
+print(f"  - {image_data_path}")
+print(f"  - {df_save_path}")
+print(f"\nReady for interactive visualization!")
+# UMAP visualization Part 1 (prep)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP VISUALIZATION PART 1 (PREP)")
+print("="*70)
+
+#Import statements, constants and functions
+
+print("\nStep 1: Importing libraries...")
+
+import pandas as pd
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+import soundfile as sf
+import io
+import librosa
+import librosa.display
+import umap
+
+import sys
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up paths and parameters...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+DF_NAME = 'df_umap.pkl'
+
+SPEC_COL = 'spectrograms' # column name that contains the spectrograms
+ID_COL = 'callID' # column name that contains call identifier (must be unique)
+
+OVERWRITE = False # If there already exists an image_data.pkl, should it be overwritten? Default no
+
+print(f"✓ Project directory: {P_DIR}")
+print(f"✓ Data directory: {DATA}")
+print(f"✓ Spectrogram column: {SPEC_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Overwrite mode: {OVERWRITE}")
+
+# Spectrogramming parameters (needed for generating the images)
+
+print("\nStep 3: Loading spectrogram parameters...")
+sys.path.insert(0, os.path.join(P_DIR, 'parameters'))
+
+try:
+    from spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+    print(f"✓ Loaded parameters: FMIN={FMIN}, FMAX={FMAX}, FFT_WIN={FFT_WIN}, FFT_HOP={FFT_HOP}")
+except ImportError as e:
+    print(f"⚠️ Could not import parameters: {e}")
+    print("  Using default values instead")
+    FFT_WIN = 0.03
+    FFT_HOP = 0.00375
+    FMIN = 0
+    FMAX = 22050
+
+# Make sure the spectrogramming parameters are correct!
+# They are used to set the correct time and frequency axis labels for the spectrogram images.
+
+# If you are using bandpass-filtered spectrograms...
+if 'filtered' in SPEC_COL:
+    print("  Detected filtered spectrograms, loading additional parameters...")
+    # ...FMIN is set to LOWCUT, FMAX to HIGHCUT and N_MELS to N_MELS_FILTERED
+    try:
+        from spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
+        FMIN = LOWCUT
+        FMAX = HIGHCUT
+        N_MELS = N_MELS_FILTERED
+        print(f"  ✓ Updated: FMIN={FMIN}, FMAX={FMAX}, N_MELS={N_MELS}")
+    except ImportError:
+        print("  ⚠️ Could not load filtered parameters")
+
+#######################################
+#1. Read in files
+
+print("\n" + "="*70)
+print("SECTION 1: Loading Data")
+print("="*70)
+
+df_path = os.path.join(DATA, DF_NAME)
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+#1.1. Check if call identifier column is present
+
+print(f"\nChecking for ID column '{ID_COL}'...")
+
+# Default callID will be the name of the wav file
+
+if ID_COL not in df.columns:
+    print('No ID-Column found (', ID_COL, ')')
+    
+    if 'filename' in df.columns:
+        print("Default ID column ", ID_COL, "will be generated from filename.")
+        df[ID_COL] = [x.split(".")[0] for x in df['filename']]
+        print(f"✓ Generated {len(df[ID_COL])} IDs from filenames")
+    else:
+        print("✗ ERROR: No filename column found to generate IDs!")
+        raise ValueError("Cannot generate ID column - no filename column found")
+else:
+    print(f"✓ ID column '{ID_COL}' found with {len(df[ID_COL].unique())} unique IDs")
+
+#Ex. output: No ID-Column found ( callID )
+#             Default ID column  callID will be generated from filename.
+
+###########################################
+#2. Generate spectrogram images
+
+print("\n" + "="*70)
+print("SECTION 2: Generating Spectrogram Images")
+print("="*70)
+
+#A spectrogram image is generated from each row in the dataframe. Images are saved in a dictionary (keys are the ID_COL of the dataframe).
+#The dictionary is pickled and saved as image_data.pkl. It will later be loaded in the interactive visualization script and these images will be displayed in the visualization.
+
+image_data_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nChecking for existing image_data.pkl at: {image_data_path}")
+
+if OVERWRITE==False and os.path.isfile(image_data_path):
+    print("File already exists. Overwrite is set to FALSE, so no new image_data will be generated.")
+    
+    # Double-check if image_data contains all the required calls
+    print("Verifying existing image_data contains all required calls...")
+    with open(image_data_path, 'rb') as handle:
+        image_data = pickle.load(handle)
+    image_keys = list(image_data.keys())
+    expected_keys = list(df[ID_COL])
+    missing = list(set(expected_keys)-set(image_keys))
+    
+    if len(missing)>0:
+        print(f"⚠️ WARNING: The current image_data.pkl file doesn't contain all calls!")
+        print(f"  Missing {len(missing)} calls from your dataframe")
+        print(f"  Set OVERWRITE=True to regenerate all images")
+    else:
+        print(f"✓ Existing image_data.pkl contains all {len(expected_keys)} required calls")
+        
+else:
+    if OVERWRITE:
+        print("Overwrite is set to TRUE - regenerating all images...")
+    else:
+        print("No existing image_data.pkl found - generating new images...")
+    
+    print(f"\nGenerating {len(df)} spectrogram images...")
+    print("This may take several minutes...")
+    
+    image_data = {}
+    for i,dat in enumerate(df.spectrograms):
+        if i % 100 == 0:  # Progress update every 100 images
+            print(f'\rProcessing: {i}/{df.shape[0]} ({100*i/df.shape[0]:.1f}%)', end='')
+        
+        dat = np.asarray(df.iloc[i][SPEC_COL])
+        sr = df.iloc[i]['samplerate_hz']
+        plt.figure()
+        librosa.display.specshow(dat, sr=sr, hop_length=int(FFT_HOP * sr),
+                                fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s', cmap='inferno')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        byte_im = buf.getvalue()
+        image_data[df.iloc[i][ID_COL]] = byte_im
+        plt.close()
+    
+    print(f'\r✓ Completed: {df.shape[0]}/{df.shape[0]} (100.0%)')
+    
+    # Store data (serialize)
+    print(f"\nSaving image_data.pkl to: {image_data_path}")
+    with open(image_data_path, 'wb') as handle:
+        pickle.dump(image_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"✓ Saved {len(image_data)} spectrogram images")
+
+#Ex. output: Processing i: 0 / 6428
+#            Processing i: 1 / 6428
+#            Processing i: 2 / 6428
+#            Processing i: 3 / 6428
+
+#Watch out for this warning: /home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'basey' parameter of __init__() has been renamed 'base' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+#/home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'linthreshy' parameter of __init__() has been renamed 'linthresh' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+
+#output goes to: Processing i: 6427 / 6428 / 6428
+
+######################################
+#3. Save dataframe
+
+print("\n" + "="*70)
+print("SECTION 3: Saving Dataframe")
+print("="*70)
+
+#Save the dataframe to make sure it contains the correct ID column for access to the image_data.
+
+df_save_path = os.path.join(DATA, DF_NAME)
+print(f"\nSaving dataframe to: {df_save_path}")
+df.to_pickle(df_save_path)
+print(f"✓ Dataframe saved with {len(df)} samples and {len(df.columns)} columns")
+
+print("\n" + "="*70)
+print("✓✓✓ VISUALIZATION PREP COMPLETE! ✓✓✓")
+print("="*70)
+print(f"\nGenerated files:")
+print(f"  - {image_data_path}")
+print(f"  - {df_save_path}")
+print(f"\nReady for interactive visualization!")
+# UMAP visualization Part 1 (prep)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP VISUALIZATION PART 1 (PREP)")
+print("="*70)
+
+#Import statements, constants and functions
+
+print("\nStep 1: Importing libraries...")
+
+import pandas as pd
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+import soundfile as sf
+import io
+import librosa
+import librosa.display
+import umap
+
+import sys
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up paths and parameters...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+DF_NAME = 'df_umap.pkl'
+
+SPEC_COL = 'spectrograms' # column name that contains the spectrograms
+ID_COL = 'callID' # column name that contains call identifier (must be unique)
+
+OVERWRITE = False # If there already exists an image_data.pkl, should it be overwritten? Default no
+
+print(f"✓ Project directory: {P_DIR}")
+print(f"✓ Data directory: {DATA}")
+print(f"✓ Spectrogram column: {SPEC_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Overwrite mode: {OVERWRITE}")
+
+# Spectrogramming parameters (needed for generating the images)
+
+print("\nStep 3: Loading spectrogram parameters...")
+sys.path.insert(0, os.path.join(P_DIR, 'parameters'))
+
+try:
+    from spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+    print(f"✓ Loaded parameters: FMIN={FMIN}, FMAX={FMAX}, FFT_WIN={FFT_WIN}, FFT_HOP={FFT_HOP}")
+except ImportError as e:
+    print(f"⚠️ Could not import parameters: {e}")
+    print("  Using default values instead")
+    FFT_WIN = 0.03
+    FFT_HOP = 0.00375
+    FMIN = 0
+    FMAX = 22050
+
+# Make sure the spectrogramming parameters are correct!
+# They are used to set the correct time and frequency axis labels for the spectrogram images.
+
+# If you are using bandpass-filtered spectrograms...
+if 'filtered' in SPEC_COL:
+    print("  Detected filtered spectrograms, loading additional parameters...")
+    # ...FMIN is set to LOWCUT, FMAX to HIGHCUT and N_MELS to N_MELS_FILTERED
+    try:
+        from spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
+        FMIN = LOWCUT
+        FMAX = HIGHCUT
+        N_MELS = N_MELS_FILTERED
+        print(f"  ✓ Updated: FMIN={FMIN}, FMAX={FMAX}, N_MELS={N_MELS}")
+    except ImportError:
+        print("  ⚠️ Could not load filtered parameters")
+
+#######################################
+#1. Read in files
+
+print("\n" + "="*70)
+print("SECTION 1: Loading Data")
+print("="*70)
+
+df_path = os.path.join(DATA, DF_NAME)
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+#1.1. Check if call identifier column is present
+
+print(f"\nChecking for ID column '{ID_COL}'...")
+
+# Default callID will be the name of the wav file
+
+if ID_COL not in df.columns:
+    print('No ID-Column found (', ID_COL, ')')
+    
+    if 'filename' in df.columns:
+        print("Default ID column ", ID_COL, "will be generated from filename.")
+        df[ID_COL] = [x.split(".")[0] for x in df['filename']]
+        print(f"✓ Generated {len(df[ID_COL])} IDs from filenames")
+    else:
+        print("✗ ERROR: No filename column found to generate IDs!")
+        raise ValueError("Cannot generate ID column - no filename column found")
+else:
+    print(f"✓ ID column '{ID_COL}' found with {len(df[ID_COL].unique())} unique IDs")
+
+#Ex. output: No ID-Column found ( callID )
+#             Default ID column  callID will be generated from filename.
+
+###########################################
+#2. Generate spectrogram images
+
+print("\n" + "="*70)
+print("SECTION 2: Generating Spectrogram Images")
+print("="*70)
+
+#A spectrogram image is generated from each row in the dataframe. Images are saved in a dictionary (keys are the ID_COL of the dataframe).
+#The dictionary is pickled and saved as image_data.pkl. It will later be loaded in the interactive visualization script and these images will be displayed in the visualization.
+
+image_data_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nChecking for existing image_data.pkl at: {image_data_path}")
+
+if OVERWRITE==False and os.path.isfile(image_data_path):
+    print("File already exists. Overwrite is set to FALSE, so no new image_data will be generated.")
+    
+    # Double-check if image_data contains all the required calls
+    print("Verifying existing image_data contains all required calls...")
+    with open(image_data_path, 'rb') as handle:
+        image_data = pickle.load(handle)
+    image_keys = list(image_data.keys())
+    expected_keys = list(df[ID_COL])
+    missing = list(set(expected_keys)-set(image_keys))
+    
+    if len(missing)>0:
+        print(f"⚠️ WARNING: The current image_data.pkl file doesn't contain all calls!")
+        print(f"  Missing {len(missing)} calls from your dataframe")
+        print(f"  Set OVERWRITE=True to regenerate all images")
+    else:
+        print(f"✓ Existing image_data.pkl contains all {len(expected_keys)} required calls")
+        
+else:
+    if OVERWRITE:
+        print("Overwrite is set to TRUE - regenerating all images...")
+    else:
+        print("No existing image_data.pkl found - generating new images...")
+    
+    print(f"\nGenerating {len(df)} spectrogram images...")
+    print("This may take several minutes...")
+    
+    image_data = {}
+    for i,dat in enumerate(df.spectrograms):
+        if i % 100 == 0:  # Progress update every 100 images
+            print(f'\rProcessing: {i}/{df.shape[0]} ({100*i/df.shape[0]:.1f}%)', end='')
+        
+        dat = np.asarray(df.iloc[i][SPEC_COL])
+        sr = df.iloc[i]['samplerate_hz']
+        plt.figure()
+        librosa.display.specshow(dat, sr=sr, hop_length=int(FFT_HOP * sr),
+                                fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s', cmap='inferno')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        byte_im = buf.getvalue()
+        image_data[df.iloc[i][ID_COL]] = byte_im
+        plt.close()
+    
+    print(f'\r✓ Completed: {df.shape[0]}/{df.shape[0]} (100.0%)')
+    
+    # Store data (serialize)
+    print(f"\nSaving image_data.pkl to: {image_data_path}")
+    with open(image_data_path, 'wb') as handle:
+        pickle.dump(image_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"✓ Saved {len(image_data)} spectrogram images")
+
+#Ex. output: Processing i: 0 / 6428
+#            Processing i: 1 / 6428
+#            Processing i: 2 / 6428
+#            Processing i: 3 / 6428
+
+#Watch out for this warning: /home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'basey' parameter of __init__() has been renamed 'base' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+#/home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'linthreshy' parameter of __init__() has been renamed 'linthresh' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+
+#output goes to: Processing i: 6427 / 6428 / 6428
+
+######################################
+#3. Save dataframe
+
+print("\n" + "="*70)
+print("SECTION 3: Saving Dataframe")
+print("="*70)
+
+#Save the dataframe to make sure it contains the correct ID column for access to the image_data.
+
+df_save_path = os.path.join(DATA, DF_NAME)
+print(f"\nSaving dataframe to: {df_save_path}")
+df.to_pickle(df_save_path)
+print(f"✓ Dataframe saved with {len(df)} samples and {len(df.columns)} columns")
+
+print("\n" + "="*70)
+print("✓✓✓ VISUALIZATION PREP COMPLETE! ✓✓✓")
+print("="*70)
+print(f"\nGenerated files:")
+print(f"  - {image_data_path}")
+print(f"  - {df_save_path}")
+print(f"\nReady for interactive visualization!")
+# UMAP visualization Part 1 (prep)
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("UMAP VISUALIZATION PART 1 (PREP)")
+print("="*70)
+
+#Import statements, constants and functions
+
+print("\nStep 1: Importing libraries...")
+
+import pandas as pd
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+import soundfile as sf
+import io
+import librosa
+import librosa.display
+import umap
+
+import sys
+sys.path.insert(0, '..')
+
+print("✓ Libraries imported")
+
+print("\nStep 2: Setting up paths and parameters...")
+
+#P_DIR = str(Path(os.getcwd()).parents[0])
+#DATA = os.path.join(os.path.sep, P_DIR, 'data')
+
+P_DIR = r"C:\Users\rjjne\OneDrive\Desktop\avgn_paper\avgn_paper_subfolder"
+DATA = os.path.join(P_DIR, 'data')
+DF_NAME = 'df_umap.pkl'
+
+SPEC_COL = 'spectrograms' # column name that contains the spectrograms
+ID_COL = 'callID' # column name that contains call identifier (must be unique)
+
+OVERWRITE = False # If there already exists an image_data.pkl, should it be overwritten? Default no
+
+print(f"✓ Project directory: {P_DIR}")
+print(f"✓ Data directory: {DATA}")
+print(f"✓ Spectrogram column: {SPEC_COL}")
+print(f"✓ ID column: {ID_COL}")
+print(f"✓ Overwrite mode: {OVERWRITE}")
+
+# Spectrogramming parameters (needed for generating the images)
+
+print("\nStep 3: Loading spectrogram parameters...")
+sys.path.insert(0, os.path.join(P_DIR, 'parameters'))
+
+try:
+    from spec_params import FFT_WIN, FFT_HOP, FMIN, FMAX
+    print(f"✓ Loaded parameters: FMIN={FMIN}, FMAX={FMAX}, FFT_WIN={FFT_WIN}, FFT_HOP={FFT_HOP}")
+except ImportError as e:
+    print(f"⚠️ Could not import parameters: {e}")
+    print("  Using default values instead")
+    FFT_WIN = 0.03
+    FFT_HOP = 0.00375
+    FMIN = 0
+    FMAX = 22050
+
+# Make sure the spectrogramming parameters are correct!
+# They are used to set the correct time and frequency axis labels for the spectrogram images.
+
+# If you are using bandpass-filtered spectrograms...
+if 'filtered' in SPEC_COL:
+    print("  Detected filtered spectrograms, loading additional parameters...")
+    # ...FMIN is set to LOWCUT, FMAX to HIGHCUT and N_MELS to N_MELS_FILTERED
+    try:
+        from spec_params import LOWCUT, HIGHCUT, N_MELS_FILTERED
+        FMIN = LOWCUT
+        FMAX = HIGHCUT
+        N_MELS = N_MELS_FILTERED
+        print(f"  ✓ Updated: FMIN={FMIN}, FMAX={FMAX}, N_MELS={N_MELS}")
+    except ImportError:
+        print("  ⚠️ Could not load filtered parameters")
+
+#######################################
+#1. Read in files
+
+print("\n" + "="*70)
+print("SECTION 1: Loading Data")
+print("="*70)
+
+df_path = os.path.join(DATA, DF_NAME)
+print(f"\nLoading dataframe from: {df_path}")
+df = pd.read_pickle(df_path)
+print(f"✓ Loaded {len(df)} samples with {len(df.columns)} columns")
+
+#1.1. Check if call identifier column is present
+
+print(f"\nChecking for ID column '{ID_COL}'...")
+
+# Default callID will be the name of the wav file
+
+if ID_COL not in df.columns:
+    print('No ID-Column found (', ID_COL, ')')
+    
+    if 'filename' in df.columns:
+        print("Default ID column ", ID_COL, "will be generated from filename.")
+        df[ID_COL] = [x.split(".")[0] for x in df['filename']]
+        print(f"✓ Generated {len(df[ID_COL])} IDs from filenames")
+    else:
+        print("✗ ERROR: No filename column found to generate IDs!")
+        raise ValueError("Cannot generate ID column - no filename column found")
+else:
+    print(f"✓ ID column '{ID_COL}' found with {len(df[ID_COL].unique())} unique IDs")
+
+#Ex. output: No ID-Column found ( callID )
+#             Default ID column  callID will be generated from filename.
+
+###########################################
+#2. Generate spectrogram images
+
+print("\n" + "="*70)
+print("SECTION 2: Generating Spectrogram Images")
+print("="*70)
+
+#A spectrogram image is generated from each row in the dataframe. Images are saved in a dictionary (keys are the ID_COL of the dataframe).
+#The dictionary is pickled and saved as image_data.pkl. It will later be loaded in the interactive visualization script and these images will be displayed in the visualization.
+
+image_data_path = os.path.join(DATA, 'image_data.pkl')
+print(f"\nChecking for existing image_data.pkl at: {image_data_path}")
+
+if OVERWRITE==False and os.path.isfile(image_data_path):
+    print("File already exists. Overwrite is set to FALSE, so no new image_data will be generated.")
+    
+    # Double-check if image_data contains all the required calls
+    print("Verifying existing image_data contains all required calls...")
+    with open(image_data_path, 'rb') as handle:
+        image_data = pickle.load(handle)
+    image_keys = list(image_data.keys())
+    expected_keys = list(df[ID_COL])
+    missing = list(set(expected_keys)-set(image_keys))
+    
+    if len(missing)>0:
+        print(f"⚠️ WARNING: The current image_data.pkl file doesn't contain all calls!")
+        print(f"  Missing {len(missing)} calls from your dataframe")
+        print(f"  Set OVERWRITE=True to regenerate all images")
+    else:
+        print(f"✓ Existing image_data.pkl contains all {len(expected_keys)} required calls")
+        
+else:
+    if OVERWRITE:
+        print("Overwrite is set to TRUE - regenerating all images...")
+    else:
+        print("No existing image_data.pkl found - generating new images...")
+    
+    print(f"\nGenerating {len(df)} spectrogram images...")
+    print("This may take several minutes...")
+    
+    image_data = {}
+    for i,dat in enumerate(df.spectrograms):
+        if i % 100 == 0:  # Progress update every 100 images
+            print(f'\rProcessing: {i}/{df.shape[0]} ({100*i/df.shape[0]:.1f}%)', end='')
+        
+        dat = np.asarray(df.iloc[i][SPEC_COL])
+        sr = df.iloc[i]['samplerate_hz']
+        plt.figure()
+        librosa.display.specshow(dat, sr=sr, hop_length=int(FFT_HOP * sr),
+                                fmin=FMIN, fmax=FMAX, y_axis='mel', x_axis='s', cmap='inferno')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        byte_im = buf.getvalue()
+        image_data[df.iloc[i][ID_COL]] = byte_im
+        plt.close()
+    
+    print(f'\r✓ Completed: {df.shape[0]}/{df.shape[0]} (100.0%)')
+    
+    # Store data (serialize)
+    print(f"\nSaving image_data.pkl to: {image_data_path}")
+    with open(image_data_path, 'wb') as handle:
+        pickle.dump(image_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"✓ Saved {len(image_data)} spectrogram images")
+
+#Ex. output: Processing i: 0 / 6428
+#            Processing i: 1 / 6428
+#            Processing i: 2 / 6428
+#            Processing i: 3 / 6428
+
+#Watch out for this warning: /home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'basey' parameter of __init__() has been renamed 'base' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+#/home/mthomas/anaconda3/envs/umap_tut_env/lib/python3.7/site-packages/librosa/display.py:974: MatplotlibDeprecationWarning: The 'linthreshy' parameter of __init__() has been renamed 'linthresh' since Matplotlib 3.3; support for the old name will be dropped two minor releases later.
+#  scaler(mode, **kwargs)
+
+#output goes to: Processing i: 6427 / 6428 / 6428
+
+######################################
+#3. Save dataframe
+
+print("\n" + "="*70)
+print("SECTION 3: Saving Dataframe")
+print("="*70)
+
+#Save the dataframe to make sure it contains the correct ID column for access to the image_data.
+
+df_save_path = os.path.join(DATA, DF_NAME)
+print(f"\nSaving dataframe to: {df_save_path}")
+df.to_pickle(df_save_path)
+print(f"✓ Dataframe saved with {len(df)} samples and {len(df.columns)} columns")
+
+print("\n" + "="*70)
+print("✓✓✓ VISUALIZATION PREP COMPLETE! ✓✓✓")
+print("="*70)
+print(f"\nGenerated files:")
+print(f"  - {image_data_path}")
+print(f"  - {df_save_path}")
+print(f"\nReady for interactive visualization!")
