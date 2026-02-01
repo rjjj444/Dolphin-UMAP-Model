@@ -1,0 +1,12 @@
+# Install the JupyterLab extension for anywidget
+import subprocess
+import sys
+
+print("Installing JupyterLab extension for anywidget...")
+subprocess.check_call([sys.executable, "-m", "pip", "install", "anywidget[dev]"])
+print("✓ Installation complete")
+print("\n⚠️ IMPORTANT: You must now:")
+print("   1. Save your notebook")
+print("   2. Close JupyterLab completely")
+print("   3. Restart JupyterLab")
+print("   4. Re-open your notebook and run the visualization cell")
